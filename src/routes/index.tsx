@@ -1,10 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Navbar } from "@/components/habitus/Navbar";
 import { Hero } from "@/components/habitus/Hero";
-import { SocialProof } from "@/components/habitus/SocialProof";
 import { HowItWorks } from "@/components/habitus/HowItWorks";
-import { FeatureShowcase } from "@/components/habitus/FeatureShowcase";
-import { TargetUsers } from "@/components/habitus/TargetUsers";
 import { Leaderboard } from "@/components/habitus/Leaderboard";
 import { Testimonials } from "@/components/habitus/Testimonials";
 import { FinalCTA } from "@/components/habitus/FinalCTA";
@@ -20,10 +17,7 @@ function Index() {
       <Navbar />
       <main>
         <Hero />
-        <SocialProof />
         <HowItWorks />
-        <FeatureShowcase />
-        <TargetUsers />
         <Leaderboard />
         <Testimonials />
         <FinalCTA />
