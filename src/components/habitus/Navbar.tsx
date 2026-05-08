@@ -92,12 +92,18 @@ export function Navbar() {
                   </a>
                 </li>
               ))}
-              <li className="pt-2">
+              <li className="pt-2 grid grid-cols-2 gap-2">
+                <a
+                  href="#"
+                  className="block rounded-full border border-border px-5 py-3 text-center text-sm font-semibold text-foreground"
+                >
+                  Login
+                </a>
                 <a
                   href="#"
                   className="block rounded-full gradient-amber px-5 py-3 text-center text-sm font-semibold text-[#1C1F2E]"
                 >
-                  Start a Challenge
+                  Sign Up
                 </a>
               </li>
             </ul>
