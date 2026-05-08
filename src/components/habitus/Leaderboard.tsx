@@ -51,7 +51,7 @@ export function Leaderboard() {
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold ${
                       r.rank === 1
-                        ? "gradient-amber text-[#1C1F2E] shadow-lg shadow-[#E07B39]/30"
+                        ? "gradient-cosmic text-foreground shadow-lg shadow-[#7C5CFF]/30"
                         : r.rank <= 3
                           ? "bg-surface-2 text-primary"
                           : "bg-surface text-muted-foreground"
