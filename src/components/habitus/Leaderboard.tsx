@@ -43,14 +43,15 @@ export function Leaderboard() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
                 className={`grid grid-cols-12 items-center gap-4 px-6 py-5 text-sm transition-colors hover:bg-surface/40 ${
-                  r.rank === 1 ? "bg-primary/5 glow-amber" : ""
+                  r.rank === 1 ? "glow-cosmic" : ""
                 }`}
+                style={r.rank === 1 ? { background: "linear-gradient(90deg, oklch(0.405 0.06 282 / 0.45) 0%, oklch(0.55 0.14 295 / 0.18) 50%, oklch(0.66 0.16 230 / 0.18) 100%)" } : undefined}
               >
                 <div className="col-span-2 sm:col-span-1">
                   <span
                     className={`inline-flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold ${
                       r.rank === 1
-                        ? "gradient-amber text-[#1C1F2E] shadow-lg shadow-[#E07B39]/30"
+                        ? "gradient-cosmic text-foreground shadow-lg shadow-[#7C5CFF]/30"
                         : r.rank <= 3
                           ? "bg-surface-2 text-primary"
                           : "bg-surface text-muted-foreground"

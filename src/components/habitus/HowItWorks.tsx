@@ -1,11 +1,11 @@
 import { motion } from "framer-motion";
-import { Target, Camera, Zap, Swords } from "lucide-react";
+import { Target, Camera, Zap, Swords, ImageIcon } from "lucide-react";
 
 const steps = [
-  { icon: Target, title: "Create a Goal", desc: "Define a daily or weekly habit. Set your stakes and invite your group." },
-  { icon: Camera, title: "Submit Proof", desc: "Drop a photo, screenshot or short note as evidence — every single day." },
-  { icon: Zap, title: "Earn XP & Streaks", desc: "Each verified proof unlocks XP. Miss a day and the streak resets — publicly." },
-  { icon: Swords, title: "Compete Together", desc: "Climb the live leaderboard and earn badges with your challenge crew." },
+  { icon: Target, title: "Create a Goal", desc: "Define a daily or weekly habit. Set your stakes and invite your group.", img: "Goal creation screen" },
+  { icon: Camera, title: "Submit Proof", desc: "Drop a photo, screenshot or short note as evidence — every single day.", img: "Proof submission flow" },
+  { icon: Zap, title: "Earn XP & Streaks", desc: "Each verified proof unlocks XP. Miss a day and the streak resets — publicly.", img: "XP & streak dashboard" },
+  { icon: Swords, title: "Compete Together", desc: "Climb the live leaderboard and earn badges with your challenge crew.", img: "Live leaderboard view" },
 ];
 
 export function HowItWorks() {
@@ -45,31 +45,20 @@ export function HowItWorks() {
                   <p className="mt-3 text-base text-muted-foreground">{s.desc}</p>
                 </div>
 
-                {/* mock visual */}
-                <div className="rounded-2xl glass-strong p-5">
-                  <div className="flex items-center justify-between border-b border-border pb-3">
-                    <div className="flex gap-1.5">
-                      <span className="h-2.5 w-2.5 rounded-full bg-surface-2" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-surface-2" />
-                      <span className="h-2.5 w-2.5 rounded-full bg-surface-2" />
-                    </div>
-                    <span className="text-[10px] uppercase tracking-wider text-muted-foreground">
-                      habitus.app
+                {/* image placeholder */}
+                <div className="group relative aspect-[4/3] overflow-hidden rounded-2xl glass-strong ring-gradient">
+                  <div className="absolute inset-0 grid-bg opacity-40" />
+                  <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-[#7C5CFF]/10" />
+                  <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 text-center">
+                    <span className="flex h-14 w-14 items-center justify-center rounded-2xl glass">
+                      <ImageIcon className="h-6 w-6 text-primary" />
                     </span>
-                  </div>
-                  <div className="mt-4 space-y-3">
-                    {[0, 1, 2].map((k) => (
-                      <div key={k} className="flex items-center justify-between rounded-lg bg-surface/50 p-3">
-                        <div className="flex items-center gap-3">
-                          <div className="h-8 w-8 rounded-md gradient-amber opacity-80" />
-                          <div className="space-y-1.5">
-                            <div className="h-2 w-24 rounded bg-surface-2" />
-                            <div className="h-2 w-16 rounded bg-surface-2/60" />
-                          </div>
-                        </div>
-                        <div className="h-2 w-10 rounded bg-primary/60" />
+                    <div>
+                      <div className="text-sm font-semibold text-foreground">{s.img}</div>
+                      <div className="mt-1 text-[11px] uppercase tracking-wider text-muted-foreground">
+                        Image placeholder · 1200×900
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               </motion.li>
