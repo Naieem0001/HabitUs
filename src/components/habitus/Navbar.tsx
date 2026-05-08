@@ -47,12 +47,18 @@ export function Navbar() {
           ))}
         </ul>
 
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-2">
+          <a
+            href="#"
+            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Login
+          </a>
           <a
             href="#"
             className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold text-[#1C1F2E] shadow-lg shadow-[#E07B39]/20 transition-transform hover:scale-[1.03]"
           >
-            Start a Challenge
+            Sign Up
           </a>
         </div>
 
