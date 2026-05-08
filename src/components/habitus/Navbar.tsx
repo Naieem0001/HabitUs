@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
@@ -50,18 +51,18 @@ export function Navbar() {
 
         <div className="hidden md:flex items-center gap-2">
           <ThemeToggle />
-          <a
-            href="#"
+          <Link
+            to="/login"
             className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
           >
             Login
-          </a>
-          <a
-            href="#"
+          </Link>
+          <Link
+            to="/login"
             className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
           >
             Sign Up
-          </a>
+          </Link>
         </div>
 
         <div className="flex items-center gap-2 md:hidden">
@@ -98,18 +99,18 @@ export function Navbar() {
                 </li>
               ))}
               <li className="pt-2 grid grid-cols-2 gap-2">
-                <a
-                  href="#"
+                <Link
+                  to="/login"
                   className="block rounded-full border border-border px-5 py-3 text-center text-sm font-semibold text-foreground"
                 >
                   Login
-                </a>
-                <a
-                  href="#"
+                </Link>
+                <Link
+                  to="/login"
                   className="block rounded-full gradient-amber px-5 py-3 text-center text-sm font-semibold"
                 >
                   Sign Up
-                </a>
+                </Link>
               </li>
             </ul>
           </motion.div>
