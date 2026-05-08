@@ -43,9 +43,8 @@ export function Leaderboard() {
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
                 className={`grid grid-cols-12 items-center gap-4 px-6 py-5 text-sm transition-colors hover:bg-surface/40 ${
-                  r.rank === 1 ? "glow-cosmic" : ""
+                  r.rank === 1 ? "leader-row-1 glow-cosmic" : ""
                 }`}
-                style={r.rank === 1 ? { background: "linear-gradient(90deg, oklch(0.405 0.06 282 / 0.45) 0%, oklch(0.55 0.14 295 / 0.18) 50%, oklch(0.66 0.16 230 / 0.18) 100%)" } : undefined}
               >
                 <div className="col-span-2 sm:col-span-1">
                   <span
