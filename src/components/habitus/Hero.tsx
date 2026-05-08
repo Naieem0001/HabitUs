@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Flame, Zap, CheckCircle2, TrendingUp, Trophy, Play, ArrowRight } from "lucide-react";
+import { Flame, Zap, CheckCircle2, TrendingUp, Trophy, ArrowRight } from "lucide-react";
 
 const leaderboard = [
   { rank: 1, name: "Aarav S.", xp: 2840, streak: 42, accent: true },
@@ -76,13 +76,6 @@ export function Hero() {
             >
               Start Your First Challenge
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </a>
-            <a
-              href="#"
-              className="inline-flex items-center gap-2 rounded-full glass px-6 py-3.5 text-sm font-semibold text-foreground transition-colors hover:bg-surface-2/40"
-            >
-              <Play className="h-4 w-4 text-primary" />
-              Watch Live Demo
             </a>
           </motion.div>
 
