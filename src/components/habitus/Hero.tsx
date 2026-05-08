@@ -102,7 +102,7 @@ export function Hero() {
             className="relative"
           >
             {/* Dashboard mock */}
-            <div className="relative rounded-2xl glass-strong ring-gradient p-5 shadow-2xl glow-amber">
+            <div className="relative rounded-2xl glass-strong ring-gradient p-5 shadow-2xl glow-cosmic">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Trophy className="h-4 w-4 text-primary" />
