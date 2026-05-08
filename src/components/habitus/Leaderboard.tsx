@@ -2,10 +2,10 @@ import { motion } from "framer-motion";
 import { Crown, Flame, TrendingUp } from "lucide-react";
 
 const rows = [
-  { rank: 1, name: "Aarav Sharma", xp: 4820, streak: 56, tasks: 142, momentum: 98 },
-  { rank: 2, name: "Maya Kapoor", xp: 4615, streak: 41, tasks: 138, momentum: 91 },
-  { rank: 3, name: "Diego Ramos", xp: 4402, streak: 38, tasks: 131, momentum: 88 },
-  { rank: 4, name: "Lin Wei", xp: 4188, streak: 29, tasks: 124, momentum: 79 },
+  { rank: 1, name: "Naieem Qureshi", xp: 4820, streak: 56, tasks: 142, momentum: 98 },
+  { rank: 2, name: "Mohammad Owais", xp: 4615, streak: 41, tasks: 138, momentum: 91 },
+  { rank: 3, name: "Affan", xp: 4402, streak: 38, tasks: 131, momentum: 88 },
+  { rank: 4, name: "Tufail", xp: 4188, streak: 29, tasks: 124, momentum: 79 },
   { rank: 5, name: "Sara Khalil", xp: 3995, streak: 33, tasks: 121, momentum: 76 },
   { rank: 6, name: "Jonah Reed", xp: 3820, streak: 21, tasks: 118, momentum: 70 },
 ];

@@ -7,7 +7,12 @@ import { useEffect, useState } from 'react';
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: async () => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
+    
+    // If no session, check if we are currently in the middle of an auth redirect
+    // (Supabase puts the token in the # hash)
+    const hasHashToken = window.location.hash.includes('access_token');
+
+    if (!session && !hasHashToken) {
       throw redirect({
         to: '/login',
       });
