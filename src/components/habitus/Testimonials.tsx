@@ -71,7 +71,7 @@ function Card({ t }: { t: (typeof testimonials)[number] }) {
         "{t.quote}"
       </blockquote>
       <figcaption className="mt-5 flex items-center gap-3 border-t border-border pt-4">
-        <span className="flex h-10 w-10 items-center justify-center rounded-full gradient-amber text-xs font-bold text-[#1C1F2E]">
+        <span className="flex h-10 w-10 items-center justify-center rounded-full gradient-amber text-xs font-bold">
           {t.name
             .split(" ")
             .map((n) => n[0])

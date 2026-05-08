@@ -9,7 +9,7 @@ export function Logo({ className = "" }: { className?: string }) {
         animate={{ scale: 1, opacity: 1 }}
         className="relative inline-flex h-8 w-8 items-center justify-center rounded-lg gradient-amber"
       >
-        <Flame className="h-4 w-4 text-[#1C1F2E] animate-flame" strokeWidth={2.5} />
+        <Flame className="h-4 w-4 animate-flame" strokeWidth={2.5} />
       </motion.span>
       <span className="font-display text-xl font-bold tracking-tight text-foreground">
         HabitUs

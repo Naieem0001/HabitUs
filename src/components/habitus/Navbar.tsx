@@ -58,7 +58,7 @@ export function Navbar() {
           </a>
           <a
             href="#"
-            className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold text-[#1C1F2E] shadow-lg shadow-[#E07B39]/20 transition-transform hover:scale-[1.03]"
+            className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
           >
             Sign Up
           </a>
@@ -106,7 +106,7 @@ export function Navbar() {
                 </a>
                 <a
                   href="#"
-                  className="block rounded-full gradient-amber px-5 py-3 text-center text-sm font-semibold text-[#1C1F2E]"
+                  className="block rounded-full gradient-amber px-5 py-3 text-center text-sm font-semibold"
                 >
                   Sign Up
                 </a>

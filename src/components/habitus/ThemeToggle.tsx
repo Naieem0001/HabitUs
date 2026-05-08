@@ -3,7 +3,7 @@ import { Moon, Sun } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">("light");
 
   useEffect(() => {
     const stored = (typeof window !== "undefined" && localStorage.getItem("habitus-theme")) as
