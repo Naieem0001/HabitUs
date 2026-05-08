@@ -1,25 +1,3 @@
-<<<<<<< HEAD
-import { createFileRoute, redirect } from "@tanstack/react-router";
-import { motion } from "framer-motion";
-import {
-  Trophy,
-  Flame,
-  CheckCircle,
-  LogOut,
-  User as UserIcon,
-  Plus,
-  Copy,
-  Share2,
-  X,
-  Upload,
-  Send,
-  ArrowRight,
-} from "lucide-react";
-import { Logo } from "../components/habitus/Logo";
-import { ThemeToggle } from "../components/habitus/ThemeToggle";
-import { supabase } from "../lib/supabaseClient";
-import { useEffect, useState } from "react";
-=======
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { motion } from 'framer-motion';
 import { 
@@ -29,7 +7,8 @@ import {
 import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
+import { ThemeToggle } from '@/components/habitus/ThemeToggle';
+import { Logo } from '@/components/habitus/Logo';
 
 // Use TanStack's beforeLoad for route protection
 export const Route = createFileRoute("/dashboard")({
@@ -54,19 +33,10 @@ interface Task {
   user_id: string;
   title: string;
   description?: string;
-<<<<<<< HEAD
-  deadline?: string;
-  category?: string;
-  priority?: "high" | "medium" | "low";
-  completionDate?: string;
-  completed: boolean;
-  proof_submitted: boolean;
-=======
   priority: 'high' | 'medium' | 'low';
   is_completed: boolean;
   due_date?: string;
   created_at: string;
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
 }
 
 interface GroupMember {
@@ -157,13 +127,6 @@ function Dashboard() {
         console.error("Failed to fetch leaderboard in dashboard:", error);
       }
     };
-<<<<<<< HEAD
-
-    initializeDashboard();
-    fetchLeaderboard();
-
-    const interval = setInterval(fetchLeaderboard, 10000);
-=======
     
     const fetchTasks = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -192,7 +155,6 @@ function Dashboard() {
       fetchLeaderboard();
       fetchTasks();
     }, 10000);
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     return () => clearInterval(interval);
   }, []);
 
@@ -203,31 +165,6 @@ function Dashboard() {
 
   const handleCreateTask = async () => {
     if (!taskTitle.trim()) return;
-<<<<<<< HEAD
-
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: taskTitle,
-      description: taskDesc,
-      deadline: taskDeadline,
-      category: taskCategory,
-      priority: taskPriority,
-      completed: false,
-      proof_submitted: false,
-    };
-
-    setTasks([...tasks, newTask]);
-    setTaskTitle("");
-    setTaskDesc("");
-    setTaskDeadline("");
-    setTaskCategory("coding");
-    setTaskPriority("medium");
-    setShowTaskModal(false);
-  };
-
-  const handleCompleteTask = (taskId: string) => {
-    setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t)));
-=======
     
     try {
       const { data: { session } } = await supabase.auth.getSession();
@@ -306,7 +243,6 @@ function Dashboard() {
       console.error("Failed to complete task:", error);
       toast.error("Failed to update challenge");
     }
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
   };
 
   const handleSubmitProof = async () => {
@@ -384,16 +320,9 @@ function Dashboard() {
     return colors[priority || "medium"] || colors.medium;
   };
 
-<<<<<<< HEAD
-  const formatDeadline = (date?: string, completionDate?: string) => {
-    if (completionDate) {
-      const d = new Date(completionDate);
-      return `✓ ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-=======
   const formatDeadline = (date?: string, isCompleted?: boolean) => {
     if (isCompleted) {
       return `✓ Done`;
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     }
 
     if (!date) return "";
@@ -409,15 +338,9 @@ function Dashboard() {
 
   const sortedTasks = [...tasks].sort((a, b) => {
     // Completed tasks go to bottom
-<<<<<<< HEAD
-    if (a.proof_submitted && !b.proof_submitted) return 1;
-    if (!a.proof_submitted && b.proof_submitted) return -1;
-
-=======
     if (a.is_completed && !b.is_completed) return 1;
     if (!a.is_completed && b.is_completed) return -1;
     
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     // Sort by priority (high > medium > low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const aPriority = priorityOrder[a.priority || "medium"];
@@ -501,35 +424,10 @@ function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {[
-<<<<<<< HEAD
-            { icon: Flame, label: "Streak", value: userStats.streak, color: "text-primary" },
-            {
-              icon: Trophy,
-              label: "XP",
-              value: userStats.xp,
-              subtext: `Level ${userStats.level}`,
-              color: "text-primary",
-            },
-            {
-              icon: CheckCircle,
-              label: "Tasks",
-              value: userStats.tasks_completed,
-              subtext: `${tasks.filter((t) => t.completed).length} today`,
-              color: "text-primary",
-            },
-            {
-              icon: Share2,
-              label: "Group Code",
-              value: groupCode,
-              color: "text-primary",
-              mono: true,
-            },
-=======
             { icon: Flame, label: 'Streak', value: userStats.streak, color: 'text-primary' },
             { icon: Trophy, label: 'XP', value: userStats.xp, subtext: `Level ${userStats.level}`, color: 'text-primary' },
             { icon: CheckCircle, label: 'Tasks', value: userStats.tasks_completed, subtext: `${tasks.filter(t => t.is_completed).length} today`, color: 'text-primary' },
             { icon: Share2, label: 'Group Code', value: groupCode, color: 'text-primary', mono: true },
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
           ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
@@ -606,13 +504,7 @@ function Dashboard() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
-<<<<<<< HEAD
-                          <h3
-                            className={`font-semibold ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
-                          >
-=======
                           <h3 className={`font-semibold ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                             {task.title}
                           </h3>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -623,50 +515,13 @@ function Dashboard() {
                                 {task.priority.toUpperCase()}
                               </span>
                             )}
-<<<<<<< HEAD
-                            {task.category && (
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getCategoryColor(task.category).bg} ${getCategoryColor(task.category).text}`}
-                              >
-                                {task.category}
-                              </span>
-                            )}
-=======
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                           </div>
                         </div>
                         {task.description && (
                           <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                         )}
-<<<<<<< HEAD
-                        {(task.deadline || task.completionDate) && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            {formatDeadline(task.deadline, task.completionDate)}
-                          </p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {task.completed && !task.proof_submitted && (
-                          <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setShowProofModal(true);
-                            }}
-                            className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition whitespace-nowrap border border-primary/20"
-                          >
-                            Submit Proof
-                          </motion.button>
-                        )}
-                        {task.proof_submitted && (
-                          <div className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium border border-primary/20">
-                            ✓ Verified
-                          </div>
-=======
                         {task.due_date && (
                           <p className="text-xs text-muted-foreground mt-2">{formatDeadline(task.due_date, task.is_completed)}</p>
->>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                         )}
                       </div>
                     </div>
