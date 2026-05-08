@@ -65,38 +65,67 @@ function Dashboard() {
   
   // Group management
   const [groupCode, setGroupCode] = useState('HABITUS');
-  const [groupMembers, setGroupMembers] = useState<GroupMember[]>([
-    { id: '1', name: 'You', xp: 150, streak: 5, tasks_completed: 8, avatar: undefined },
-    { id: '2', name: 'Aadil K.', xp: 340, streak: 12, tasks_completed: 28 },
-    { id: '3', name: 'Sara R.', xp: 210, streak: 8, tasks_completed: 19 },
-  ]);
-  
   // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<GroupMember[]>([]);
+  const [leaderboard, setLeaderboard] = useState<any[]>([]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-    });
-    
-    // Mock tasks
-    setTasks([
-      { id: '1', title: 'Complete coding challenge', description: 'Solve 2 LeetCode problems', deadline: '2026-05-08', category: 'coding', priority: 'high', completed: false, proof_submitted: false },
-      { id: '2', title: 'Morning workout', description: '30 min run', deadline: '2026-05-08', category: 'fitness', priority: 'medium', completed: true, proof_submitted: false },
-      { id: '3', title: 'Read documentation', deadline: '2026-05-08', category: 'learning', priority: 'low', completed: false, proof_submitted: false },
-    ]);
-    
-    // Simulate leaderboard polling (every 10s)
-    const pollLeaderboard = () => {
-      const calculated = groupMembers.map(m => ({
-        ...m,
-        score: (m.tasks_completed * 10) + (m.streak * 15) + m.xp
-      })).sort((a: any, b: any) => b.score - a.score);
-      setLeaderboard(calculated as any);
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+
+    const initializeDashboard = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser && session?.access_token) {
+        // Update streak first
+        try {
+          await fetch(`${backendUrl}/api/streak/update`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+        } catch (error) {
+          console.error("Failed to update streak:", error);
+        }
+
+        // Fetch personal stats
+        try {
+          const response = await fetch(`${backendUrl}/api/me`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+          const profile = await response.json();
+          if (profile && !profile.error) {
+            setUserStats({
+              xp: profile.xp || 0,
+              streak: profile.streak_days || 0,
+              tasks_completed: profile.tasks_completed || 0,
+              level: profile.level || 0
+            });
+          }
+        } catch (error) {
+          console.error("Failed to fetch user profile:", error);
+        }
+      }
+    };
+
+    // Fetch leaderboard
+    const fetchLeaderboard = async () => {
+      try {
+        const response = await fetch(`${backendUrl}/api/leaderboard`);
+        const data = await response.json();
+        setLeaderboard(data);
+      } catch (error) {
+        console.error("Failed to fetch leaderboard in dashboard:", error);
+      }
     };
     
-    pollLeaderboard();
-    const interval = setInterval(pollLeaderboard, 10000);
+    initializeDashboard();
+    fetchLeaderboard();
+    
+    const interval = setInterval(fetchLeaderboard, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -134,18 +163,41 @@ function Dashboard() {
     ));
   };
 
-  const handleSubmitProof = () => {
+  const handleSubmitProof = async () => {
     if (!selectedTask || !proofText.trim()) return;
     
     const completionDate = new Date().toISOString().split('T')[0];
     
-    // Award XP
-    setUserStats(prev => ({
-      ...prev,
-      xp: prev.xp + 15,
-      level: Math.floor((prev.xp + 15) / 100),
-      tasks_completed: prev.tasks_completed + 1,
-    }));
+    // Persist to backend
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(`${backendUrl}/api/xp/add`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            amount: 15,
+            reason: `Completed task: ${selectedTask.title}`
+          })
+        });
+        
+        const result = await response.json();
+        if (result.user) {
+          setUserStats({
+            xp: result.user.xp,
+            level: result.user.level,
+            tasks_completed: result.user.tasks_completed,
+            streak: userStats.streak // Streak is handled by separate endpoint
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Failed to add XP to backend:", error);
+    }
     
     setTasks(tasks.map(t =>
       t.id === selectedTask.id ? { ...t, proof_submitted: true, completionDate } : t
@@ -424,7 +476,6 @@ function Dashboard() {
                   <p className="text-muted-foreground text-center py-8">Loading leaderboard...</p>
                 ) : (
                   leaderboard.slice(0, 5).map((member, idx) => {
-                    const score = (member.tasks_completed * 10) + (member.streak * 15) + member.xp;
                     return (
                       <motion.div
                         key={member.id}
@@ -444,14 +495,14 @@ function Dashboard() {
                             {idx + 1}
                           </div>
                           <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{member.name}</p>
+                            <p className="font-semibold text-sm truncate">{member.display_name}</p>
                             <p className="text-xs text-muted-foreground">
-                              🔥 {member.streak} day streak
+                              🔥 {member.streak_days} day streak
                             </p>
                           </div>
                         </div>
                         <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-bold text-primary text-sm">{score}</p>
+                          <p className="font-bold text-primary text-sm">{member.score}</p>
                           <p className="text-xs text-muted-foreground">pts</p>
                         </div>
                       </motion.div>
