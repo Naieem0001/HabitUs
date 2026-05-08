@@ -4,6 +4,7 @@ import {
   Trophy, Flame, CheckCircle, LogOut, User as UserIcon, 
   Plus, Copy, Share2, X, Upload, Send, ArrowRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
 
@@ -25,14 +26,13 @@ export const Route = createFileRoute('/dashboard')({
 
 interface Task {
   id: string;
+  user_id: string;
   title: string;
   description?: string;
-  deadline?: string;
-  category?: string;
-  priority?: 'high' | 'medium' | 'low';
-  completionDate?: string;
-  completed: boolean;
-  proof_submitted: boolean;
+  priority: 'high' | 'medium' | 'low';
+  is_completed: boolean;
+  due_date?: string;
+  created_at: string;
 }
 
 interface GroupMember {
@@ -122,10 +122,33 @@ function Dashboard() {
       }
     };
     
+    const fetchTasks = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        try {
+          const response = await fetch(`${backendUrl}/api/tasks`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setTasks(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch tasks:", error);
+        }
+      }
+    };
+    
     initializeDashboard();
     fetchLeaderboard();
+    fetchTasks();
     
-    const interval = setInterval(fetchLeaderboard, 10000);
+    const interval = setInterval(() => {
+      fetchLeaderboard();
+      fetchTasks();
+    }, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -134,33 +157,86 @@ function Dashboard() {
     window.location.href = '/login';
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!taskTitle.trim()) return;
     
-    const newTask: Task = {
-      id: Date.now().toString(),
-      title: taskTitle,
-      description: taskDesc,
-      deadline: taskDeadline,
-      category: taskCategory,
-      priority: taskPriority,
-      completed: false,
-      proof_submitted: false,
-    };
-    
-    setTasks([...tasks, newTask]);
-    setTaskTitle('');
-    setTaskDesc('');
-    setTaskDeadline('');
-    setTaskCategory('coding');
-    setTaskPriority('medium');
-    setShowTaskModal(false);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(`${backendUrl}/api/tasks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            title: taskTitle,
+            description: taskDesc,
+            priority: taskPriority,
+            due_date: taskDeadline
+          })
+        });
+        
+        const newTask = await response.json();
+        if (newTask && !newTask.error) {
+          setTasks([newTask, ...tasks]);
+          setTaskTitle('');
+          setTaskDesc('');
+          setTaskDeadline('');
+          setTaskCategory('coding');
+          setTaskPriority('medium');
+          setShowTaskModal(false);
+          toast.success("New Challenge Accepted! 🚀");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      toast.error("Failed to create challenge");
+    }
   };
 
-  const handleCompleteTask = (taskId: string) => {
-    setTasks(tasks.map(t => 
-      t.id === taskId ? { ...t, completed: !t.completed } : t
-    ));
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(`${backendUrl}/api/tasks/${taskId}/complete`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        const result = await response.json();
+        if (result.user) {
+          // Update local tasks state
+          setTasks(tasks.map(t => 
+            t.id === taskId ? { ...t, is_completed: true } : t
+          ));
+
+          // Update user stats
+          setUserStats({
+            xp: result.user.xp,
+            level: result.user.level,
+            tasks_completed: result.user.tasks_completed,
+            streak: userStats.streak
+          });
+
+          toast.success("Quest Complete! +10 XP 🎉");
+
+          if (result.leveled_up) {
+            toast.success(`LEVEL UP! You are now Level ${result.user.level} 🏆`, {
+              duration: 5000,
+              style: { background: '#FFD700', color: '#000' }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to complete task:", error);
+      toast.error("Failed to update challenge");
+    }
   };
 
   const handleSubmitProof = async () => {
@@ -234,10 +310,9 @@ function Dashboard() {
     return colors[priority || 'medium'] || colors.medium;
   };
 
-  const formatDeadline = (date?: string, completionDate?: string) => {
-    if (completionDate) {
-      const d = new Date(completionDate);
-      return `✓ ${d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+  const formatDeadline = (date?: string, isCompleted?: boolean) => {
+    if (isCompleted) {
+      return `✓ Done`;
     }
     
     if (!date) return '';
@@ -253,8 +328,8 @@ function Dashboard() {
 
   const sortedTasks = [...tasks].sort((a, b) => {
     // Completed tasks go to bottom
-    if (a.proof_submitted && !b.proof_submitted) return 1;
-    if (!a.proof_submitted && b.proof_submitted) return -1;
+    if (a.is_completed && !b.is_completed) return 1;
+    if (!a.is_completed && b.is_completed) return -1;
     
     // Sort by priority (high > medium > low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
@@ -264,8 +339,8 @@ function Dashboard() {
     if (aPriority !== bPriority) return bPriority - aPriority;
     
     // Then by deadline (earlier first)
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    if (a.due_date && b.due_date) {
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
     }
     
     return 0;
@@ -339,7 +414,7 @@ function Dashboard() {
           {[
             { icon: Flame, label: 'Streak', value: userStats.streak, color: 'text-primary' },
             { icon: Trophy, label: 'XP', value: userStats.xp, subtext: `Level ${userStats.level}`, color: 'text-primary' },
-            { icon: CheckCircle, label: 'Tasks', value: userStats.tasks_completed, subtext: `${tasks.filter(t => t.completed).length} today`, color: 'text-primary' },
+            { icon: CheckCircle, label: 'Tasks', value: userStats.tasks_completed, subtext: `${tasks.filter(t => t.is_completed).length} today`, color: 'text-primary' },
             { icon: Share2, label: 'Group Code', value: groupCode, color: 'text-primary', mono: true },
           ].map((stat, idx) => {
             const Icon = stat.icon;
@@ -406,14 +481,14 @@ function Dashboard() {
                     <div className="flex items-start gap-4">
                       <input
                         type="checkbox"
-                        checked={task.completed}
-                        disabled={task.proof_submitted}
+                        checked={task.is_completed}
+                        disabled={task.is_completed}
                         onChange={() => handleCompleteTask(task.id)}
                         className="mt-1 w-5 h-5 rounded accent-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className={`font-semibold ${task.completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                          <h3 className={`font-semibold ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
                             {task.title}
                           </h3>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -422,38 +497,13 @@ function Dashboard() {
                                 {task.priority.toUpperCase()}
                               </span>
                             )}
-                            {task.category && (
-                              <span className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getCategoryColor(task.category).bg} ${getCategoryColor(task.category).text}`}>
-                                {task.category}
-                              </span>
-                            )}
                           </div>
                         </div>
                         {task.description && (
                           <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                         )}
-                        {(task.deadline || task.completionDate) && (
-                          <p className="text-xs text-muted-foreground mt-2">{formatDeadline(task.deadline, task.completionDate)}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        {task.completed && !task.proof_submitted && (
-                          <motion.button
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            onClick={() => {
-                              setSelectedTask(task);
-                              setShowProofModal(true);
-                            }}
-                            className="px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition whitespace-nowrap border border-primary/20"
-                          >
-                            Submit Proof
-                          </motion.button>
-                        )}
-                        {task.proof_submitted && (
-                          <div className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium border border-primary/20">
-                            ✓ Verified
-                          </div>
+                        {task.due_date && (
+                          <p className="text-xs text-muted-foreground mt-2">{formatDeadline(task.due_date, task.is_completed)}</p>
                         )}
                       </div>
                     </div>
