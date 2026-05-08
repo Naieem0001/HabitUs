@@ -118,8 +118,13 @@ function RootShell({ children }: { children: React.ReactNode }) {
   );
 }
 
+import { useAuth } from '../hooks/useAuth';
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  
+  // Initialize auth listener to upsert users on login
+  useAuth();
 
   return (
     <QueryClientProvider client={queryClient}>
