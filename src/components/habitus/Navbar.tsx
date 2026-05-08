@@ -4,11 +4,9 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 
 const links = [
-  { label: "Features", href: "#features" },
-  { label: "Leaderboard", href: "#leaderboard" },
   { label: "How It Works", href: "#how" },
-  { label: "Community", href: "#community" },
-  { label: "Login", href: "#" },
+  { label: "Leaderboard", href: "#leaderboard" },
+  { label: "Testimonials", href: "#testimonials" },
 ];
 
 export function Navbar() {
