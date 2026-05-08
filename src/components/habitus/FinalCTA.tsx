@@ -23,7 +23,7 @@ export function FinalCTA() {
           </p>
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
-              href="#"
+              href="/login"
               className="group inline-flex items-center gap-2 rounded-full gradient-amber px-7 py-3.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
             >
               Start a Challenge
