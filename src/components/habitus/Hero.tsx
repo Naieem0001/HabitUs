@@ -110,7 +110,7 @@ export function Hero() {
             className="mt-8 flex flex-wrap items-center gap-3"
           >
             <a
-              href="#"
+              href="/login"
               className="group inline-flex items-center gap-2 rounded-full gradient-amber px-6 py-3.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
             >
               Start Your First Challenge
