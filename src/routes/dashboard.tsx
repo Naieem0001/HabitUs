@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { motion } from "framer-motion";
 import {
@@ -18,6 +19,17 @@ import { Logo } from "../components/habitus/Logo";
 import { ThemeToggle } from "../components/habitus/ThemeToggle";
 import { supabase } from "../lib/supabaseClient";
 import { useEffect, useState } from "react";
+=======
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { motion } from 'framer-motion';
+import { 
+  Trophy, Flame, CheckCircle, LogOut, User as UserIcon, 
+  Plus, Copy, Share2, X, Upload, Send, ArrowRight
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase } from '../lib/supabaseClient';
+import { useEffect, useState } from 'react';
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
 
 // Use TanStack's beforeLoad for route protection
 export const Route = createFileRoute("/dashboard")({
@@ -39,14 +51,22 @@ export const Route = createFileRoute("/dashboard")({
 
 interface Task {
   id: string;
+  user_id: string;
   title: string;
   description?: string;
+<<<<<<< HEAD
   deadline?: string;
   category?: string;
   priority?: "high" | "medium" | "low";
   completionDate?: string;
   completed: boolean;
   proof_submitted: boolean;
+=======
+  priority: 'high' | 'medium' | 'low';
+  is_completed: boolean;
+  due_date?: string;
+  created_at: string;
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
 }
 
 interface GroupMember {
@@ -137,11 +157,42 @@ function Dashboard() {
         console.error("Failed to fetch leaderboard in dashboard:", error);
       }
     };
+<<<<<<< HEAD
 
     initializeDashboard();
     fetchLeaderboard();
 
     const interval = setInterval(fetchLeaderboard, 10000);
+=======
+    
+    const fetchTasks = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        try {
+          const response = await fetch(`${backendUrl}/api/tasks`, {
+            headers: {
+              'Authorization': `Bearer ${session.access_token}`
+            }
+          });
+          const data = await response.json();
+          if (Array.isArray(data)) {
+            setTasks(data);
+          }
+        } catch (error) {
+          console.error("Failed to fetch tasks:", error);
+        }
+      }
+    };
+    
+    initializeDashboard();
+    fetchLeaderboard();
+    fetchTasks();
+    
+    const interval = setInterval(() => {
+      fetchLeaderboard();
+      fetchTasks();
+    }, 10000);
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     return () => clearInterval(interval);
   }, []);
 
@@ -150,8 +201,9 @@ function Dashboard() {
     window.location.href = "/login";
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!taskTitle.trim()) return;
+<<<<<<< HEAD
 
     const newTask: Task = {
       id: Date.now().toString(),
@@ -175,6 +227,86 @@ function Dashboard() {
 
   const handleCompleteTask = (taskId: string) => {
     setTasks(tasks.map((t) => (t.id === taskId ? { ...t, completed: !t.completed } : t)));
+=======
+    
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(`${backendUrl}/api/tasks`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+          },
+          body: JSON.stringify({
+            title: taskTitle,
+            description: taskDesc,
+            priority: taskPriority,
+            due_date: taskDeadline
+          })
+        });
+        
+        const newTask = await response.json();
+        if (newTask && !newTask.error) {
+          setTasks([newTask, ...tasks]);
+          setTaskTitle('');
+          setTaskDesc('');
+          setTaskDeadline('');
+          setTaskCategory('coding');
+          setTaskPriority('medium');
+          setShowTaskModal(false);
+          toast.success("New Challenge Accepted! 🚀");
+        }
+      }
+    } catch (error) {
+      console.error("Failed to create task:", error);
+      toast.error("Failed to create challenge");
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
+        const response = await fetch(`${backendUrl}/api/tasks/${taskId}/complete`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${session.access_token}`
+          }
+        });
+        
+        const result = await response.json();
+        if (result.user) {
+          // Update local tasks state
+          setTasks(tasks.map(t => 
+            t.id === taskId ? { ...t, is_completed: true } : t
+          ));
+
+          // Update user stats
+          setUserStats({
+            xp: result.user.xp,
+            level: result.user.level,
+            tasks_completed: result.user.tasks_completed,
+            streak: userStats.streak
+          });
+
+          toast.success("Quest Complete! +10 XP 🎉");
+
+          if (result.leveled_up) {
+            toast.success(`LEVEL UP! You are now Level ${result.user.level} 🏆`, {
+              duration: 5000,
+              style: { background: '#FFD700', color: '#000' }
+            });
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Failed to complete task:", error);
+      toast.error("Failed to update challenge");
+    }
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
   };
 
   const handleSubmitProof = async () => {
@@ -252,10 +384,16 @@ function Dashboard() {
     return colors[priority || "medium"] || colors.medium;
   };
 
+<<<<<<< HEAD
   const formatDeadline = (date?: string, completionDate?: string) => {
     if (completionDate) {
       const d = new Date(completionDate);
       return `✓ ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+=======
+  const formatDeadline = (date?: string, isCompleted?: boolean) => {
+    if (isCompleted) {
+      return `✓ Done`;
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     }
 
     if (!date) return "";
@@ -271,9 +409,15 @@ function Dashboard() {
 
   const sortedTasks = [...tasks].sort((a, b) => {
     // Completed tasks go to bottom
+<<<<<<< HEAD
     if (a.proof_submitted && !b.proof_submitted) return 1;
     if (!a.proof_submitted && b.proof_submitted) return -1;
 
+=======
+    if (a.is_completed && !b.is_completed) return 1;
+    if (!a.is_completed && b.is_completed) return -1;
+    
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
     // Sort by priority (high > medium > low)
     const priorityOrder = { high: 3, medium: 2, low: 1 };
     const aPriority = priorityOrder[a.priority || "medium"];
@@ -282,8 +426,8 @@ function Dashboard() {
     if (aPriority !== bPriority) return bPriority - aPriority;
 
     // Then by deadline (earlier first)
-    if (a.deadline && b.deadline) {
-      return new Date(a.deadline).getTime() - new Date(b.deadline).getTime();
+    if (a.due_date && b.due_date) {
+      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
     }
 
     return 0;
@@ -357,6 +501,7 @@ function Dashboard() {
         {/* Stats Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
           {[
+<<<<<<< HEAD
             { icon: Flame, label: "Streak", value: userStats.streak, color: "text-primary" },
             {
               icon: Trophy,
@@ -379,6 +524,12 @@ function Dashboard() {
               color: "text-primary",
               mono: true,
             },
+=======
+            { icon: Flame, label: 'Streak', value: userStats.streak, color: 'text-primary' },
+            { icon: Trophy, label: 'XP', value: userStats.xp, subtext: `Level ${userStats.level}`, color: 'text-primary' },
+            { icon: CheckCircle, label: 'Tasks', value: userStats.tasks_completed, subtext: `${tasks.filter(t => t.is_completed).length} today`, color: 'text-primary' },
+            { icon: Share2, label: 'Group Code', value: groupCode, color: 'text-primary', mono: true },
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
           ].map((stat, idx) => {
             const Icon = stat.icon;
             return (
@@ -448,16 +599,20 @@ function Dashboard() {
                     <div className="flex items-start gap-4">
                       <input
                         type="checkbox"
-                        checked={task.completed}
-                        disabled={task.proof_submitted}
+                        checked={task.is_completed}
+                        disabled={task.is_completed}
                         onChange={() => handleCompleteTask(task.id)}
                         className="mt-1 w-5 h-5 rounded accent-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2 mb-2">
+<<<<<<< HEAD
                           <h3
                             className={`font-semibold ${task.completed ? "line-through text-muted-foreground" : "text-foreground"}`}
                           >
+=======
+                          <h3 className={`font-semibold ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                             {task.title}
                           </h3>
                           <div className="flex items-center gap-2 flex-shrink-0">
@@ -468,6 +623,7 @@ function Dashboard() {
                                 {task.priority.toUpperCase()}
                               </span>
                             )}
+<<<<<<< HEAD
                             {task.category && (
                               <span
                                 className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap ${getCategoryColor(task.category).bg} ${getCategoryColor(task.category).text}`}
@@ -475,11 +631,14 @@ function Dashboard() {
                                 {task.category}
                               </span>
                             )}
+=======
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                           </div>
                         </div>
                         {task.description && (
                           <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
                         )}
+<<<<<<< HEAD
                         {(task.deadline || task.completionDate) && (
                           <p className="text-xs text-muted-foreground mt-2">
                             {formatDeadline(task.deadline, task.completionDate)}
@@ -504,6 +663,10 @@ function Dashboard() {
                           <div className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-sm font-medium border border-primary/20">
                             ✓ Verified
                           </div>
+=======
+                        {task.due_date && (
+                          <p className="text-xs text-muted-foreground mt-2">{formatDeadline(task.due_date, task.is_completed)}</p>
+>>>>>>> 4b1ece12570ad3dfb15c8dc147fdde5b8f85a4e5
                         )}
                       </div>
                     </div>

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Flame, Github } from "lucide-react";
+import { Flame } from "lucide-react";
 import { Logo } from "../components/habitus/Logo";
 import { ThemeToggle } from "../components/habitus/ThemeToggle";
 import "../Login.css";
@@ -13,15 +13,6 @@ function Login() {
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-  };
-
-  const handleGithubLogin = async () => {
-    await supabase.auth.signInWithOAuth({
-      provider: "github",
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
       },
@@ -90,12 +81,9 @@ function Login() {
           <div className="space-y-4">
             <button
               onClick={handleGoogleLogin}
-              className="w-full bg-card hover:bg-surface border border-border text-foreground font-medium py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-3 group shadow-md cursor-pointer"
+              className="w-full bg-gradient-to-r from-[#FF6B35] to-[#F8A64C] text-white font-semibold py-4 px-4 rounded-2xl transition-transform hover:shadow-2xl hover:-translate-y-0.5 flex items-center justify-center gap-3"
             >
-              <svg
-                className="w-5 h-5 group-hover:scale-110 transition-transform"
-                viewBox="0 0 24 24"
-              >
+              <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
                   d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
                   fill="#4285F4"
@@ -113,23 +101,7 @@ function Login() {
                   fill="#EA4335"
                 />
               </svg>
-              Continue with Google
-            </button>
-
-            <div className="relative flex items-center py-4">
-              <div className="grow border-t border-border"></div>
-              <span className="shrink-0 mx-4 text-muted-foreground text-sm font-medium">
-                — or —
-              </span>
-              <div className="grow border-t border-border"></div>
-            </div>
-
-            <button
-              onClick={handleGithubLogin}
-              className="w-full bg-transparent hover:bg-surface border border-border text-foreground font-medium py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-3 group cursor-pointer"
-            >
-              <Github size={20} className="group-hover:scale-110 transition-transform" />
-              Continue with GitHub
+              Sign up / Login with Google
             </button>
           </div>
         </div>
