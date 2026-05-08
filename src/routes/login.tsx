@@ -29,7 +29,6 @@ function Login() {
 
   return (
     <div className="relative min-h-screen flex flex-col md:flex-row bg-background text-foreground font-sans">
-      
         <a
           href="/"
           aria-label="Go home"
@@ -38,7 +37,6 @@ function Login() {
           <Home className="h-5 w-5" />
           <span className="text-sm font-bold">Habit<span className="text-accent">Us</span></span>
         </a>
-      
       {/* Left Side - Branding & Visuals */}
       <div className="flex-1 relative overflow-hidden flex flex-col justify-center p-12 lg:p-24 min-h-[50vh] md:min-h-screen border-b md:border-b-0 md:border-r border-border">
         <div className="absolute inset-0 pointer-events-none">
