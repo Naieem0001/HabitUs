@@ -1,5 +1,14 @@
-import { motion } from "framer-motion";
-import { Flame, Zap, CheckCircle2, TrendingUp, Trophy, ArrowRight } from "lucide-react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { useRef } from "react";
+import {
+  Flame,
+  Zap,
+  CheckCircle2,
+  TrendingUp,
+  Trophy,
+  ArrowRight,
+  Users,
+} from "lucide-react";
 
 const leaderboard = [
   { rank: 1, name: "Aarav S.", xp: 2840, streak: 42, accent: true },
@@ -8,13 +17,43 @@ const leaderboard = [
   { rank: 4, name: "Lin W.", xp: 2188, streak: 19 },
 ];
 
+const avatars = [
+  { initials: "JS", grad: "linear-gradient(135deg,#4F8BFF,#7C5CFF)" },
+  { initials: "MK", grad: "linear-gradient(135deg,#7C5CFF,#E07B39)" },
+  { initials: "DR", grad: "linear-gradient(135deg,#22D3EE,#4F8BFF)" },
+  { initials: "LW", grad: "linear-gradient(135deg,#34D399,#22D3EE)" },
+  { initials: "SK", grad: "linear-gradient(135deg,#F472B6,#7C5CFF)" },
+];
+
 export function Hero() {
+  const ref = useRef<HTMLElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: ref,
+    offset: ["start start", "end start"],
+  });
+
+  const yBg = useTransform(scrollYProgress, [0, 1], [0, 120]);
+  const yMock = useTransform(scrollYProgress, [0, 1], [0, -80]);
+  const opacityCopy = useTransform(scrollYProgress, [0, 0.6], [1, 0.4]);
+
   return (
-    <section className="relative isolate overflow-hidden pt-32 pb-24 sm:pt-40 sm:pb-32">
-      {/* background */}
-      <div className="absolute inset-0 -z-10 grid-bg opacity-60" />
-      <div className="absolute -top-32 left-1/2 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full bg-[#F6B17A]/15 blur-[140px]" />
-      <div className="absolute bottom-0 right-0 -z-10 h-[400px] w-[400px] rounded-full bg-[#E07B39]/10 blur-[120px]" />
+    <section
+      ref={ref}
+      className="relative isolate overflow-hidden pt-32 pb-32 sm:pt-40 sm:pb-40"
+    >
+      {/* parallax background */}
+      <motion.div
+        style={{ y: yBg }}
+        className="absolute inset-0 -z-10 grid-bg opacity-50"
+      />
+      <motion.div
+        style={{ y: yBg }}
+        className="absolute -top-32 left-1/2 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full hero-glow-1 blur-[140px]"
+      />
+      <motion.div
+        style={{ y: yBg }}
+        className="absolute bottom-0 right-0 -z-10 h-[400px] w-[400px] rounded-full hero-glow-2 blur-[120px]"
+      />
 
       {/* floating particles */}
       {[...Array(14)].map((_, i) => (
@@ -32,7 +71,7 @@ export function Hero() {
 
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-4 sm:px-6 lg:grid-cols-12 lg:px-8">
         {/* Copy */}
-        <div className="lg:col-span-6">
+        <motion.div style={{ opacity: opacityCopy }} className="lg:col-span-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -72,29 +111,44 @@ export function Hero() {
           >
             <a
               href="#"
-              className="group inline-flex items-center gap-2 rounded-full gradient-amber px-6 py-3.5 text-sm font-semibold text-[#1C1F2E] shadow-xl shadow-[#E07B39]/25 transition-transform hover:scale-[1.03]"
+              className="group inline-flex items-center gap-2 rounded-full gradient-amber px-6 py-3.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
             >
               Start Your First Challenge
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
             </a>
+            <a
+              href="#how"
+              className="inline-flex items-center gap-2 rounded-full glass px-6 py-3.5 text-sm font-semibold transition-colors hover:bg-surface/60"
+            >
+              See how it works
+            </a>
           </motion.div>
 
-          <div className="mt-8 flex items-center gap-6 text-xs text-muted-foreground">
-            <div className="flex -space-x-2">
-              {["#F6B17A", "#E07B39", "#7C83A8", "#424769"].map((c, i) => (
-                <span
-                  key={i}
-                  className="h-7 w-7 rounded-full border-2 border-background"
-                  style={{ background: c }}
-                />
-              ))}
-            </div>
-            <span>Joined by 12,000+ goal-getters this week</span>
+          {/* stat strip */}
+          <div className="mt-10 grid max-w-md grid-cols-3 gap-4">
+            {[
+              { v: "12k+", l: "Active users" },
+              { v: "2.4M", l: "Proofs sent" },
+              { v: "94%", l: "Streak survival" },
+            ].map((s) => (
+              <div
+                key={s.l}
+                className="rounded-xl glass px-3 py-3 text-center"
+              >
+                <div className="text-lg font-bold text-foreground">{s.v}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  {s.l}
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
+        </motion.div>
 
         {/* Visual */}
-        <div className="relative lg:col-span-6">
+        <motion.div
+          style={{ y: yMock }}
+          className="relative lg:col-span-6"
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -128,7 +182,7 @@ export function Hero() {
                     <div className="flex items-center gap-3">
                       <span
                         className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold ${
-                          p.accent ? "gradient-amber text-[#1C1F2E]" : "bg-surface-2 text-foreground"
+                          p.accent ? "gradient-amber" : "bg-surface-2 text-foreground"
                         }`}
                       >
                         {p.rank}
@@ -168,7 +222,7 @@ export function Hero() {
               className="absolute -bottom-5 -right-2 sm:-right-6 flex items-center gap-2 rounded-2xl glass-strong px-4 py-3 shadow-xl"
             >
               <span className="flex h-9 w-9 items-center justify-center rounded-full gradient-amber">
-                <Zap className="h-4 w-4 text-[#1C1F2E]" />
+                <Zap className="h-4 w-4" />
               </span>
               <div>
                 <div className="text-xs text-muted-foreground">XP Earned</div>
@@ -200,8 +254,35 @@ export function Hero() {
               </div>
             </motion.div>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
+
+      {/* Bottom-left avatar badge */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.6, duration: 0.6 }}
+        className="absolute bottom-6 left-4 z-20 sm:bottom-10 sm:left-8"
+      >
+        <div className="flex items-center gap-3 rounded-full glass-strong px-3 py-2 pr-4 shadow-xl">
+          <div className="flex -space-x-2">
+            {avatars.map((a) => (
+              <span
+                key={a.initials}
+                className="flex h-8 w-8 items-center justify-center rounded-full border-2 border-background text-[10px] font-bold text-white"
+                style={{ background: a.grad }}
+              >
+                {a.initials}
+              </span>
+            ))}
+          </div>
+          <div className="flex items-center gap-1.5 text-[11px] sm:text-xs">
+            <Users className="h-3.5 w-3.5 text-primary" />
+            <span className="font-semibold text-foreground">1,200+</span>
+            <span className="text-muted-foreground">goal-getters this month</span>
+          </div>
+        </div>
+      </motion.div>
     </section>
   );
 }
