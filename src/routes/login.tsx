@@ -29,16 +29,15 @@ function Login() {
 
   return (
     <div className="relative min-h-screen flex flex-col md:flex-row bg-background text-foreground font-sans">
-      
-        <a
-          href="/"
-          aria-label="Go home"
-          className="absolute left-6 top-6 z-50 inline-flex items-center gap-4 text-foreground transition hover:opacity-80"
-          >
-          <Home className="h-5 w-5" />
-          <span className="text-sm font-bold">Habit<span className="text-accent">Us</span></span>
-        </a>
-      
+      <a
+        href="/"
+        aria-label="Go home"
+        className="absolute left-6 top-6 z-50 inline-flex items-center gap-4 text-foreground transition hover:opacity-80"
+        >
+        <Home className="h-5 w-5" />
+        <span className="text-sm font-bold">Habit<span className="text-accent">Us</span></span>
+</a>
+
       {/* Left Side - Branding & Visuals */}
       <div className="flex-1 relative overflow-hidden flex flex-col justify-center p-12 lg:p-24 min-h-[50vh] md:min-h-screen border-b md:border-b-0 md:border-r border-border">
         <div className="absolute inset-0 pointer-events-none">
@@ -46,12 +45,7 @@ function Login() {
             <div key={i} className="particle" />
           ))}
         </div>
-
         <div className="relative z-10 fade-in">
-          {/* <a href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-foreground mb-16 hover:opacity-80 transition-opacity">
-            Habit<span className="text-accent">Us</span>
-          </a> */}
-
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-foreground leading-[0.9] mb-6">
             Don't break<br />
             <span className="text-accent">the streak.</span>
@@ -82,6 +76,7 @@ function Login() {
         <div className="absolute top-6 right-6">
           <ThemeToggle />
         </div>
+
         <div className="w-full max-w-sm fade-in" style={{ animationDelay: '0.2s' }}>
           <div className="mb-10">
             <div className="w-16 h-16 bg-card rounded-2xl mx-auto flex items-center justify-center mb-6 shadow-lg border border-border">
