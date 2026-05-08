@@ -4,11 +4,9 @@ import { Menu, X } from "lucide-react";
 import { Logo } from "./Logo";
 
 const links = [
-  { label: "Features", href: "#features" },
-  { label: "Leaderboard", href: "#leaderboard" },
   { label: "How It Works", href: "#how" },
-  { label: "Community", href: "#community" },
-  { label: "Login", href: "#" },
+  { label: "Leaderboard", href: "#leaderboard" },
+  { label: "Testimonials", href: "#testimonials" },
 ];
 
 export function Navbar() {
@@ -49,12 +47,18 @@ export function Navbar() {
           ))}
         </ul>
 
-        <div className="hidden md:block">
+        <div className="hidden md:flex items-center gap-2">
+          <a
+            href="#"
+            className="rounded-full px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Login
+          </a>
           <a
             href="#"
             className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold text-[#1C1F2E] shadow-lg shadow-[#E07B39]/20 transition-transform hover:scale-[1.03]"
           >
-            Start a Challenge
+            Sign Up
           </a>
         </div>
 
@@ -88,12 +92,18 @@ export function Navbar() {
                   </a>
                 </li>
               ))}
-              <li className="pt-2">
+              <li className="pt-2 grid grid-cols-2 gap-2">
+                <a
+                  href="#"
+                  className="block rounded-full border border-border px-5 py-3 text-center text-sm font-semibold text-foreground"
+                >
+                  Login
+                </a>
                 <a
                   href="#"
                   className="block rounded-full gradient-amber px-5 py-3 text-center text-sm font-semibold text-[#1C1F2E]"
                 >
-                  Start a Challenge
+                  Sign Up
                 </a>
               </li>
             </ul>
