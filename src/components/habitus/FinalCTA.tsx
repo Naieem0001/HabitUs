@@ -11,8 +11,8 @@ export function FinalCTA() {
           viewport={{ once: true }}
           className="relative overflow-hidden rounded-3xl glass-strong ring-gradient p-10 text-center sm:p-16"
         >
-          <div className="absolute -top-32 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 rounded-full bg-[#F6B17A]/25 blur-[140px]" />
-          <div className="absolute -bottom-32 left-1/2 -z-10 h-[400px] w-[500px] -translate-x-1/2 rounded-full bg-[#E07B39]/20 blur-[120px]" />
+          <div className="absolute -top-32 left-1/2 -z-10 h-[500px] w-[700px] -translate-x-1/2 rounded-full hero-glow-1 blur-[140px]" />
+          <div className="absolute -bottom-32 left-1/2 -z-10 h-[400px] w-[500px] -translate-x-1/2 rounded-full hero-glow-2 blur-[120px]" />
 
           <h2 className="mx-auto max-w-3xl text-3xl font-bold leading-tight sm:text-5xl">
             Your goals become real when{" "}
@@ -24,7 +24,7 @@ export function FinalCTA() {
           <div className="mt-9 flex flex-wrap items-center justify-center gap-3">
             <a
               href="#"
-              className="group inline-flex items-center gap-2 rounded-full gradient-amber px-7 py-3.5 text-sm font-semibold text-[#1C1F2E] shadow-xl shadow-[#E07B39]/30 transition-transform hover:scale-[1.03]"
+              className="group inline-flex items-center gap-2 rounded-full gradient-amber px-7 py-3.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03]"
             >
               Start a Challenge
               <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />

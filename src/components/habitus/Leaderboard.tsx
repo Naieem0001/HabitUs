@@ -60,7 +60,7 @@ export function Leaderboard() {
                   </span>
                 </div>
                 <div className="col-span-7 sm:col-span-4 flex items-center gap-3">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-full gradient-amber text-xs font-bold text-[#1C1F2E]">
+                  <span className="flex h-9 w-9 items-center justify-center rounded-full gradient-amber text-xs font-bold">
                     {r.name.charAt(0)}
                   </span>
                   <div>
