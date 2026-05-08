@@ -45,9 +45,7 @@ export function HowItWorks() {
             How It Works
           </span>
           <h2 className="mt-6 text-3xl font-bold sm:text-5xl">
-            From idea to{" "}
-            <span className="text-gradient-amber">winning streak</span> in 4
-            steps.
+            From idea to <span className="text-gradient-amber">winning streak</span> in 4 steps.
           </h2>
           <p className="mx-auto mt-4 max-w-xl text-base text-muted-foreground">
             A clear loop: commit publicly, prove daily, earn XP, climb together.
@@ -80,12 +78,8 @@ export function HowItWorks() {
                         Step {i + 1} of 4
                       </span>
                     </div>
-                    <h3 className="mt-4 text-2xl font-bold sm:text-3xl">
-                      {s.title}
-                    </h3>
-                    <p className="mt-3 text-base text-muted-foreground">
-                      {s.desc}
-                    </p>
+                    <h3 className="mt-4 text-2xl font-bold sm:text-3xl">{s.title}</h3>
+                    <p className="mt-3 text-base text-muted-foreground">{s.desc}</p>
                   </div>
                 </div>
 

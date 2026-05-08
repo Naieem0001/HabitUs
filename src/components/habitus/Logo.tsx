@@ -11,9 +11,7 @@ export function Logo({ className = "" }: { className?: string }) {
       >
         <Flame className="h-4 w-4 animate-flame" strokeWidth={2.5} />
       </motion.span>
-      <span className="font-display text-xl font-bold tracking-tight text-foreground">
-        HabitUs
-      </span>
+      <span className="font-display text-xl font-bold tracking-tight text-foreground">HabitUs</span>
     </a>
   );
 }

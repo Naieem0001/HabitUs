@@ -1,14 +1,6 @@
 import { motion, useScroll, useTransform } from "framer-motion";
 import { useRef } from "react";
-import {
-  Flame,
-  Zap,
-  CheckCircle2,
-  TrendingUp,
-  Trophy,
-  ArrowRight,
-  Users,
-} from "lucide-react";
+import { Flame, Zap, CheckCircle2, TrendingUp, Trophy, ArrowRight, Users } from "lucide-react";
 
 const leaderboard = [
   { rank: 1, name: "Aarav S.", xp: 2840, streak: 42, accent: true },
@@ -37,15 +29,9 @@ export function Hero() {
   const opacityCopy = useTransform(scrollYProgress, [0, 0.6], [1, 0.4]);
 
   return (
-    <section
-      ref={ref}
-      className="relative isolate overflow-hidden pt-32 pb-32 sm:pt-40 sm:pb-40"
-    >
+    <section ref={ref} className="relative isolate overflow-hidden pt-32 pb-32 sm:pt-40 sm:pb-40">
       {/* parallax background */}
-      <motion.div
-        style={{ y: yBg }}
-        className="absolute inset-0 -z-10 grid-bg opacity-50"
-      />
+      <motion.div style={{ y: yBg }} className="absolute inset-0 -z-10 grid-bg opacity-50" />
       <motion.div
         style={{ y: yBg }}
         className="absolute -top-32 left-1/2 -z-10 h-[600px] w-[900px] -translate-x-1/2 rounded-full hero-glow-1 blur-[140px]"
@@ -99,8 +85,8 @@ export function Hero() {
             transition={{ duration: 0.7, delay: 0.15 }}
             className="mt-6 max-w-xl text-base text-muted-foreground sm:text-lg"
           >
-            Daily goals become public commitments. Create tasks, submit proof,
-            earn XP, and climb the leaderboard with your friends.
+            Daily goals become public commitments. Create tasks, submit proof, earn XP, and climb
+            the leaderboard with your friends.
           </motion.p>
 
           <motion.div
@@ -131,10 +117,7 @@ export function Hero() {
               { v: "2.4M", l: "Proofs sent" },
               { v: "94%", l: "Streak survival" },
             ].map((s) => (
-              <div
-                key={s.l}
-                className="rounded-xl glass px-3 py-3 text-center"
-              >
+              <div key={s.l} className="rounded-xl glass px-3 py-3 text-center">
                 <div className="text-lg font-bold text-foreground">{s.v}</div>
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
                   {s.l}
@@ -145,10 +128,7 @@ export function Hero() {
         </motion.div>
 
         {/* Visual */}
-        <motion.div
-          style={{ y: yMock }}
-          className="relative lg:col-span-6"
-        >
+        <motion.div style={{ y: yMock }} className="relative lg:col-span-6">
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -195,7 +175,9 @@ export function Hero() {
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-sm font-bold text-primary">{p.xp.toLocaleString()} XP</div>
+                      <div className="text-sm font-bold text-primary">
+                        {p.xp.toLocaleString()} XP
+                      </div>
                       <div className="text-[11px] text-muted-foreground">+{120 - i * 18} today</div>
                     </div>
                   </motion.div>
