@@ -27,6 +27,7 @@ function Login() {
   };
 
   return (
+    
     <div className="min-h-screen flex flex-col md:flex-row bg-[#0F1117] font-sans">
       {/* Left Side - Branding & Visuals */}
       <div className="flex-1 relative overflow-hidden flex flex-col justify-center p-12 lg:p-24 min-h-[50vh] md:min-h-screen border-b md:border-b-0 md:border-r border-white/5">
@@ -37,9 +38,7 @@ function Login() {
         </div>
 
         <div className="relative z-10 fade-in">
-          <a href="/" className="inline-flex items-center gap-2 text-2xl font-bold text-white mb-16 hover:opacity-80 transition-opacity">
-            Habit<span className="text-[#FF6B35]">Us</span>
-          </a>
+      
           
           <h1 className="text-6xl md:text-7xl lg:text-8xl font-black text-white leading-[0.9] mb-6">
             Don't break<br/>
