@@ -1,795 +1,438 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
-import { motion } from 'framer-motion';
-import { 
-  Trophy, Flame, CheckCircle, LogOut, User as UserIcon, 
-  Plus, Copy, Share2, X, Upload, Send, ArrowRight
-} from 'lucide-react';
-import { toast } from 'sonner';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
-import { ThemeToggle } from '@/components/habitus/ThemeToggle';
-import { Logo } from '@/components/habitus/Logo';
+import {
+  Zap, Search, Bell, LogOut, Plus, X, Send, Upload,
+  Flame, Trophy, CheckCircle, BarChart2, Crown, Calendar,
+  Users, Award, ChevronRight
+} from 'lucide-react';
+import { toast } from 'sonner';
 
-// Use TanStack's beforeLoad for route protection
 export const Route = createFileRoute("/dashboard")({
   beforeLoad: async () => {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    const hasHashToken = window.location.hash.includes("access_token");
-
-    if (!session && !hasHashToken) {
-      throw redirect({
-        to: "/login",
-      });
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session && !window.location.hash.includes("access_token")) {
+      throw redirect({ to: "/login" });
     }
   },
   component: Dashboard,
 });
 
 interface Task {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string;
-  priority: 'high' | 'medium' | 'low';
-  is_completed: boolean;
-  due_date?: string;
-  created_at: string;
+  id: string; user_id: string; title: string; description?: string;
+  priority: 'high' | 'medium' | 'low'; is_completed: boolean;
+  due_date?: string; created_at: string;
 }
 
-interface GroupMember {
-  id: string;
-  name: string;
-  avatar?: string;
-  xp: number;
-  streak: number;
-  tasks_completed: number;
-}
+/* ── dummy weekly data ── */
+const WEEK = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const WEEK_DATA = [4, 6, 3, 7, 5, 2, 6];
+const MAX_TASKS = 8;
+
+/* ── dummy leaderboard ── */
+const DUMMY_LB = [
+  { id:'1', display_name:'Alex K.',    score: 28400, streak_days: 128, xp: 15400 },
+  { id:'2', display_name:'Sarah M.',   score: 24200, streak_days:  85, xp: 14200 },
+  { id:'3', display_name:'David K.',   score: 19800, streak_days:  64, xp: 12800 },
+  { id:'4', display_name:'Emma W.',    score: 16500, streak_days:  42, xp: 11500 },
+  { id:'5', display_name:'James T.',   score: 12800, streak_days:  21, xp:  9800 },
+];
+
+const NAV = [
+  { icon: CheckCircle, label: "Today's Tasks",   id: 'tasks' },
+  { icon: Calendar,    label: 'Calendar',         id: 'calendar' },
+  { icon: Users,       label: 'Collaborations',   id: 'collab' },
+  { icon: Award,       label: 'Badges',           id: 'badges' },
+];
 
 function Dashboard() {
-  const [user, setUser] = useState<any>(null);
-  const [userStats, setUserStats] = useState({ xp: 0, streak: 0, tasks_completed: 0, level: 0 });
+  const [user, setUser]           = useState<any>(null);
+  const [stats, setStats]         = useState({ xp: 0, streak: 0, tasks_completed: 0, level: 0 });
+  const [tasks, setTasks]         = useState<Task[]>([]);
+  const [leaderboard, setLb]      = useState<any[]>(DUMMY_LB);
+  const [activeNav, setActiveNav] = useState('tasks');
+  const [tab, setTab]             = useState<'active'|'completed'>('active');
+  const [search, setSearch]       = useState('');
 
-  // Task management
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [showTaskModal, setShowTaskModal] = useState(false);
-  const [taskTitle, setTaskTitle] = useState("");
-  const [taskDesc, setTaskDesc] = useState("");
-  const [taskDeadline, setTaskDeadline] = useState("");
-  const [taskCategory, setTaskCategory] = useState("coding");
-  const [taskPriority, setTaskPriority] = useState<"high" | "medium" | "low">("medium");
+  /* task modal */
+  const [showModal, setShowModal] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [taskDesc,  setTaskDesc]  = useState('');
+  const [taskPriority, setTaskPriority] = useState<'high'|'medium'|'low'>('medium');
+  const [taskDeadline, setTaskDeadline] = useState('');
 
-  // Proof submission
-  const [showProofModal, setShowProofModal] = useState(false);
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [proofText, setProofText] = useState("");
-  const [proofImage, setProofImage] = useState<File | null>(null);
-
-  // Group management
-  const [groupCode, setGroupCode] = useState("HABITUS");
-  // Leaderboard
-  const [leaderboard, setLeaderboard] = useState<any[]>([]);
+  const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   useEffect(() => {
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-
-    const initializeDashboard = async () => {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      const currentUser = session?.user ?? null;
-      setUser(currentUser);
-
-      if (currentUser && session?.access_token) {
-        // Update streak first
-        try {
-          await fetch(`${backendUrl}/api/streak/update`, {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
-        } catch (error) {
-          console.error("Failed to update streak:", error);
-        }
-
-        // Fetch personal stats
-        try {
-          const response = await fetch(`${backendUrl}/api/me`, {
-            headers: {
-              Authorization: `Bearer ${session.access_token}`,
-            },
-          });
-          const profile = await response.json();
-          if (profile && !profile.error) {
-            setUserStats({
-              xp: profile.xp || 0,
-              streak: profile.streak_days || 0,
-              tasks_completed: profile.tasks_completed || 0,
-              level: profile.level || 0,
-            });
-          }
-        } catch (error) {
-          console.error("Failed to fetch user profile:", error);
-        }
-      }
-    };
-
-    // Fetch leaderboard
-    const fetchLeaderboard = async () => {
-      try {
-        const response = await fetch(`${backendUrl}/api/leaderboard`);
-        const data = await response.json();
-        setLeaderboard(data);
-      } catch (error) {
-        console.error("Failed to fetch leaderboard in dashboard:", error);
-      }
-    };
-    
-    const fetchTasks = async () => {
+    (async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
+      const u = session?.user ?? null;
+      setUser(u);
+      if (u && session?.access_token) {
         try {
-          const response = await fetch(`${backendUrl}/api/tasks`, {
-            headers: {
-              'Authorization': `Bearer ${session.access_token}`
-            }
-          });
-          const data = await response.json();
-          if (Array.isArray(data)) {
-            setTasks(data);
-          }
-        } catch (error) {
-          console.error("Failed to fetch tasks:", error);
-        }
+          const r = await fetch(`${backendUrl}/api/me`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+          const p = await r.json();
+          if (p && !p.error) setStats({ xp: p.xp||0, streak: p.streak_days||0, tasks_completed: p.tasks_completed||0, level: p.level||0 });
+        } catch {}
+        try {
+          const r = await fetch(`${backendUrl}/api/tasks`, { headers: { Authorization: `Bearer ${session.access_token}` } });
+          const d = await r.json();
+          if (Array.isArray(d)) setTasks(d);
+        } catch {}
       }
-    };
-    
-    initializeDashboard();
-    fetchLeaderboard();
-    fetchTasks();
-    
-    const interval = setInterval(() => {
-      fetchLeaderboard();
-      fetchTasks();
-    }, 10000);
-    return () => clearInterval(interval);
+      try {
+        const r  = await fetch(`${backendUrl}/api/leaderboard`);
+        const d  = await r.json();
+        if (Array.isArray(d) && d.length) setLb(d);
+      } catch {}
+    })();
   }, []);
 
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    window.location.href = "/login";
-  };
+  const signOut = async () => { await supabase.auth.signOut(); window.location.href = '/login'; };
 
-  const handleCreateTask = async () => {
+  const createTask = async () => {
     if (!taskTitle.trim()) return;
-    
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-        const response = await fetch(`${backendUrl}/api/tasks`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${session.access_token}`
-          },
-          body: JSON.stringify({
-            title: taskTitle,
-            description: taskDesc,
-            priority: taskPriority,
-            due_date: taskDeadline
-          })
-        });
-        
-        const newTask = await response.json();
-        if (newTask && !newTask.error) {
-          setTasks([newTask, ...tasks]);
-          setTaskTitle('');
-          setTaskDesc('');
-          setTaskDeadline('');
-          setTaskCategory('coding');
-          setTaskPriority('medium');
-          setShowTaskModal(false);
-          toast.success("New Challenge Accepted! 🚀");
-        }
-      }
-    } catch (error) {
-      console.error("Failed to create task:", error);
-      toast.error("Failed to create challenge");
-    }
+      if (!session?.access_token) return;
+      const r = await fetch(`${backendUrl}/api/tasks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+        body: JSON.stringify({ title: taskTitle, description: taskDesc, priority: taskPriority, due_date: taskDeadline }),
+      });
+      const t = await r.json();
+      if (t && !t.error) { setTasks([t, ...tasks]); toast.success('Challenge added! 🚀'); }
+    } catch { toast.error('Failed'); }
+    setShowModal(false); setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
   };
 
-  const handleCompleteTask = async (taskId: string) => {
+  const completeTask = async (id: string) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-        const response = await fetch(`${backendUrl}/api/tasks/${taskId}/complete`, {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`
-          }
-        });
-        
-        const result = await response.json();
-        if (result.user) {
-          // Update local tasks state
-          setTasks(tasks.map(t => 
-            t.id === taskId ? { ...t, is_completed: true } : t
-          ));
-
-          // Update user stats
-          setUserStats({
-            xp: result.user.xp,
-            level: result.user.level,
-            tasks_completed: result.user.tasks_completed,
-            streak: userStats.streak
-          });
-
-          toast.success("Quest Complete! +10 XP 🎉");
-
-          if (result.leveled_up) {
-            toast.success(`LEVEL UP! You are now Level ${result.user.level} 🏆`, {
-              duration: 5000,
-              style: { background: '#FFD700', color: '#000' }
-            });
-          }
-        }
-      }
-    } catch (error) {
-      console.error("Failed to complete task:", error);
-      toast.error("Failed to update challenge");
-    }
+      if (!session?.access_token) return;
+      await fetch(`${backendUrl}/api/tasks/${id}/complete`, { method: 'PATCH', headers: { Authorization: `Bearer ${session.access_token}` } });
+      setTasks(tasks.map(t => t.id === id ? { ...t, is_completed: true } : t));
+      toast.success('Quest Complete! +10 XP 🎉');
+    } catch {}
   };
 
-  const handleSubmitProof = async () => {
-    if (!selectedTask || !proofText.trim()) return;
+  const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
+  const email       = user?.email || 'user@email.com';
+  const avatar      = user?.user_metadata?.avatar_url;
 
-    const completionDate = new Date().toISOString().split("T")[0];
+  const filtered = tasks.filter(t =>
+    (tab === 'active' ? !t.is_completed : t.is_completed) &&
+    t.title.toLowerCase().includes(search.toLowerCase())
+  );
 
-    // Persist to backend
-    try {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (session?.access_token) {
-        const backendUrl = import.meta.env.VITE_BACKEND_URL || "http://localhost:3000";
-        const response = await fetch(`${backendUrl}/api/xp/add`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-          body: JSON.stringify({
-            amount: 15,
-            reason: `Completed task: ${selectedTask.title}`,
-          }),
-        });
-
-        const result = await response.json();
-        if (result.user) {
-          setUserStats({
-            xp: result.user.xp,
-            level: result.user.level,
-            tasks_completed: result.user.tasks_completed,
-            streak: userStats.streak, // Streak is handled by separate endpoint
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Failed to add XP to backend:", error);
-    }
-
-    setTasks(
-      tasks.map((t) =>
-        t.id === selectedTask.id ? { ...t, proof_submitted: true, completionDate } : t,
-      ),
-    );
-
-    setShowProofModal(false);
-    setSelectedTask(null);
-    setProofText("");
-    setProofImage(null);
-  };
-
-  const copyGroupCode = () => {
-    navigator.clipboard.writeText(groupCode);
-    alert("Group code copied!");
-  };
-
-  const getCategoryColor = (category?: string) => {
-    const colors: Record<string, { bg: string; text: string }> = {
-      coding: { bg: "bg-blue-500/10", text: "text-blue-500" },
-      fitness: { bg: "bg-green-500/10", text: "text-green-500" },
-      learning: { bg: "bg-purple-500/10", text: "text-purple-500" },
-      work: { bg: "bg-orange-500/10", text: "text-orange-500" },
-      personal: { bg: "bg-pink-500/10", text: "text-pink-500" },
-    };
-    return colors[category || "coding"] || colors.coding;
-  };
-
-  const getPriorityColor = (priority?: string) => {
-    const colors: Record<string, { bg: string; text: string; border: string }> = {
-      high: { bg: "bg-red-500/10", text: "text-red-500", border: "border-red-500/30" },
-      medium: { bg: "bg-yellow-500/10", text: "text-yellow-500", border: "border-yellow-500/30" },
-      low: { bg: "bg-gray-500/10", text: "text-gray-500", border: "border-gray-500/30" },
-    };
-    return colors[priority || "medium"] || colors.medium;
-  };
-
-  const formatDeadline = (date?: string, isCompleted?: boolean) => {
-    if (isCompleted) {
-      return `✓ Done`;
-    }
-
-    if (!date) return "";
-    const d = new Date(date);
-    const today = new Date();
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
-
-    if (d.toDateString() === today.toDateString()) return "📅 Today";
-    if (d.toDateString() === tomorrow.toDateString()) return "📅 Tomorrow";
-    return `📅 ${d.toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
-  };
-
-  const sortedTasks = [...tasks].sort((a, b) => {
-    // Completed tasks go to bottom
-    if (a.is_completed && !b.is_completed) return 1;
-    if (!a.is_completed && b.is_completed) return -1;
-    
-    // Sort by priority (high > medium > low)
-    const priorityOrder = { high: 3, medium: 2, low: 1 };
-    const aPriority = priorityOrder[a.priority || "medium"];
-    const bPriority = priorityOrder[b.priority || "medium"];
-
-    if (aPriority !== bPriority) return bPriority - aPriority;
-
-    // Then by deadline (earlier first)
-    if (a.due_date && b.due_date) {
-      return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-    }
-
-    return 0;
-  });
+  const priorityColor: Record<string,string> = { high:'text-red-400 bg-red-400/10 border-red-400/30', medium:'text-yellow-400 bg-yellow-400/10 border-yellow-400/30', low:'text-slate-400 bg-slate-400/10 border-slate-400/20' };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-background text-foreground">
-      {/* Background decoration */}
-      <div className="absolute inset-0 -z-10 grid-bg opacity-30" />
-      <div className="absolute -top-32 left-1/2 -z-10 h-[500px] w-[800px] -translate-x-1/2 rounded-full hero-glow-1 blur-[140px]" />
+    <div className="flex h-screen bg-[#080b14] text-foreground font-sans overflow-hidden">
 
-      {/* Dashboard Navbar */}
-      <nav className="sticky top-0 z-40 backdrop-blur-xl border-b border-border bg-background/70">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Logo />
-          <ThemeToggle />
-
-          {user && (
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:flex items-center gap-3">
-                <div className="text-right">
-                  <p className="text-sm font-medium text-foreground">Lv.{userStats.level}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {user.user_metadata?.full_name?.split(" ")[0] || "Challenger"}
-                  </p>
-                </div>
-              </div>
-              {user.user_metadata?.avatar_url ? (
-                <img
-                  src={user.user_metadata.avatar_url}
-                  alt="Avatar"
-                  className="w-9 h-9 rounded-full border border-border"
-                />
-              ) : (
-                <div className="w-9 h-9 rounded-full bg-surface flex items-center justify-center border border-border">
-                  <UserIcon size={16} className="text-muted-foreground" />
-                </div>
-              )}
-              <button
-                onClick={handleSignOut}
-                className="p-2 text-muted-foreground hover:text-foreground hover:bg-surface rounded-lg transition-colors"
-                title="Sign Out"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <main className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-12">
-        {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="mb-12"
-        >
-          <h1 className="text-4xl sm:text-5xl font-bold leading-tight mb-2">
-            Welcome back,{" "}
-            <span className="text-gradient-amber">
-              {user?.user_metadata?.full_name?.split(" ")[0] || "Challenger"}
-            </span>
-            .
-          </h1>
-          <p className="text-muted-foreground text-lg">
-            Your squad is ranking high. Keep the streak alive! 🔥
-          </p>
-        </motion.div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-          {[
-            { icon: Flame, label: 'Streak', value: userStats.streak, color: 'text-primary' },
-            { icon: Trophy, label: 'XP', value: userStats.xp, subtext: `Level ${userStats.level}`, color: 'text-primary' },
-            { icon: CheckCircle, label: 'Tasks', value: userStats.tasks_completed, subtext: `${tasks.filter(t => t.is_completed).length} today`, color: 'text-primary' },
-            { icon: Share2, label: 'Group Code', value: groupCode, color: 'text-primary', mono: true },
-          ].map((stat, idx) => {
-            const Icon = stat.icon;
-            return (
-              <motion.div
-                key={stat.label}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: idx * 0.1 }}
-                className="rounded-2xl glass p-6 border border-border hover:border-primary/50 transition-all group cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="w-10 h-10 rounded-lg glass-strong flex items-center justify-center border border-border group-hover:border-primary/50 transition-all">
-                    <Icon className={`h-5 w-5 ${stat.color}`} />
-                  </div>
-                  <span className="text-xs uppercase tracking-wider text-muted-foreground font-medium">
-                    {stat.label}
-                  </span>
-                </div>
-                <div className={`text-3xl font-bold ${stat.mono ? "font-mono" : ""}`}>
-                  {stat.value}
-                </div>
-                {stat.subtext && (
-                  <p className="text-xs text-muted-foreground mt-2">{stat.subtext}</p>
-                )}
-              </motion.div>
-            );
-          })}
+      {/* ══════════════════════════════════
+          SIDEBAR
+      ══════════════════════════════════ */}
+      <aside className="flex w-52 shrink-0 flex-col border-r border-white/5 bg-[#0a0d1a]">
+        {/* Logo */}
+        <div className="flex h-16 items-center gap-2.5 border-b border-white/5 px-5">
+          <span className="flex h-8 w-8 items-center justify-center rounded-xl gradient-brand shadow-brand">
+            <Zap className="h-4 w-4 text-white" fill="white" strokeWidth={2.5} />
+          </span>
+          <span className="font-display text-lg font-bold tracking-tight">
+            Habit<span className="text-gradient">Us</span>
+          </span>
         </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Tasks */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-2"
+        {/* Nav items */}
+        <nav className="flex-1 space-y-1 px-3 py-4">
+          {NAV.map(({ icon: Icon, label, id }) => (
+            <button
+              key={id}
+              onClick={() => setActiveNav(id)}
+              className={`flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all ${
+                activeNav === id
+                  ? 'bg-primary/15 text-primary'
+                  : 'text-muted-foreground hover:bg-white/5 hover:text-foreground'
+              }`}
+            >
+              <Icon className="h-4 w-4 shrink-0" />
+              {label}
+            </button>
+          ))}
+        </nav>
+
+        {/* Logout */}
+        <div className="border-t border-white/5 px-3 py-4">
+          <button
+            onClick={signOut}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-muted-foreground hover:bg-red-500/10 hover:text-red-400 transition-all"
           >
-            {/* Tasks Header */}
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold">Today's Challenges</h2>
+            <LogOut className="h-4 w-4" />
+            Log Out
+          </button>
+        </div>
+      </aside>
+
+      {/* ══════════════════════════════════
+          MAIN AREA
+      ══════════════════════════════════ */}
+      <div className="flex flex-1 flex-col overflow-hidden">
+
+        {/* ── Top Header ── */}
+        <header className="flex h-16 shrink-0 items-center gap-4 border-b border-white/5 bg-[#0a0d1a]/80 px-6 backdrop-blur">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search tasks…"
+              className="w-full rounded-xl border border-white/8 bg-white/4 py-2 pl-9 pr-4 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/40"
+            />
+          </div>
+
+          {/* XP badge */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-primary/25 bg-primary/10 px-3 py-1.5">
+            <Trophy className="h-3.5 w-3.5 text-primary" />
+            <span className="text-xs font-bold text-primary">{stats.xp.toLocaleString()} XP</span>
+          </div>
+
+          {/* Level badge */}
+          <div className="flex items-center gap-1.5 rounded-xl border border-[var(--neon-amber)]/25 bg-[var(--neon-amber)]/10 px-3 py-1.5">
+            <Zap className="h-3.5 w-3.5 text-[var(--neon-amber)]" />
+            <span className="text-xs font-bold text-[var(--neon-amber)]">Level {stats.level}</span>
+          </div>
+
+          {/* Bell */}
+          <button className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-muted-foreground hover:text-foreground transition-colors">
+            <Bell className="h-4 w-4" />
+            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
+          </button>
+
+          {/* User */}
+          <div className="flex items-center gap-2.5">
+            {avatar ? (
+              <img src={avatar} alt="" className="h-9 w-9 rounded-full object-cover ring-1 ring-white/10" />
+            ) : (
+              <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/20 ring-1 ring-primary/30 text-sm font-bold text-primary">
+                {displayName.charAt(0)}
+              </div>
+            )}
+            <div className="hidden md:block leading-tight">
+              <div className="text-sm font-semibold text-foreground">{displayName}</div>
+              <div className="text-[10px] text-muted-foreground">{email}</div>
+            </div>
+          </div>
+        </header>
+
+        {/* ── Content ── */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* Center column */}
+          <div className="flex flex-1 flex-col overflow-y-auto px-6 py-6">
+
+            {/* Welcome row */}
+            <div className="mb-6 flex items-start justify-between">
+              <div>
+                <h1 className="font-display text-3xl font-extrabold tracking-tight">
+                  Welcome, <span className="text-gradient">{displayName}!</span>
+                </h1>
+                <p className="mt-1 text-sm text-muted-foreground">Your squad is ranking high. Keep the streak alive! 🔥</p>
+              </div>
               <button
-                onClick={() => setShowTaskModal(true)}
-                className="inline-flex items-center gap-2 rounded-full gradient-amber px-5 py-2.5 text-sm font-semibold shadow-brand transition-transform hover:scale-[1.03] text-white"
+                onClick={() => setShowModal(true)}
+                className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity"
               >
-                <Plus size={18} /> New
+                <Plus className="h-4 w-4" /> Add Task
               </button>
             </div>
 
-            {/* Tasks List */}
-            <div className="space-y-3">
-              {tasks.length === 0 ? (
-                <div className="rounded-2xl glass border border-border p-8 text-center">
-                  <p className="text-muted-foreground">
-                    No challenges yet. Create one to get started! 🚀
-                  </p>
+            {/* Tasks panel */}
+            <div className="flex-1 rounded-2xl border border-white/6 bg-white/2 overflow-hidden">
+              {/* Tabs */}
+              <div className="flex items-center justify-between border-b border-white/5 px-5 py-3">
+                <div className="flex gap-1 rounded-xl bg-white/5 p-1">
+                  {(['active','completed'] as const).map(t => (
+                    <button
+                      key={t}
+                      onClick={() => setTab(t)}
+                      className={`rounded-lg px-4 py-1.5 text-xs font-semibold capitalize transition-all ${
+                        tab === t ? 'bg-primary text-white shadow' : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      {t}
+                    </button>
+                  ))}
                 </div>
-              ) : (
-                sortedTasks.map((task, idx) => (
-                  <motion.div
-                    key={task.id}
-                    initial={{ opacity: 0, x: -10 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: idx * 0.05 }}
-                    className="rounded-xl glass border border-border p-4 hover:border-primary/50 transition-all group"
-                  >
-                    <div className="flex items-start gap-4">
-                      <input
-                        type="checkbox"
-                        checked={task.is_completed}
-                        disabled={task.is_completed}
-                        onChange={() => handleCompleteTask(task.id)}
-                        className="mt-1 w-5 h-5 rounded accent-primary cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between gap-2 mb-2">
-                          <h3 className={`font-semibold ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
-                            {task.title}
-                          </h3>
-                          <div className="flex items-center gap-2 flex-shrink-0">
-                            {task.priority && (
-                              <span
-                                className={`px-2.5 py-1 rounded-full text-xs font-medium whitespace-nowrap border ${getPriorityColor(task.priority).bg} ${getPriorityColor(task.priority).text} ${getPriorityColor(task.priority).border}`}
-                              >
-                                {task.priority.toUpperCase()}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                        {task.description && (
-                          <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-                        )}
-                        {task.due_date && (
-                          <p className="text-xs text-muted-foreground mt-2">{formatDeadline(task.due_date, task.is_completed)}</p>
-                        )}
-                      </div>
+                <span className="text-xs text-muted-foreground">{filtered.length} task{filtered.length !== 1 ? 's' : ''}</span>
+              </div>
+
+              {/* Task list */}
+              <div className="divide-y divide-white/4">
+                {filtered.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-brand shadow-brand">
+                      <Zap className="h-7 w-7 text-white" fill="white" />
                     </div>
-                  </motion.div>
-                ))
-              )}
+                    <p className="text-sm font-medium text-foreground">No {tab} tasks</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      {tab === 'active' ? 'Create a challenge to get started! 🚀' : 'Complete some tasks to see them here.'}
+                    </p>
+                  </div>
+                ) : filtered.map(task => (
+                  <div key={task.id} className="flex items-center gap-4 px-5 py-4 hover:bg-white/2 transition-colors">
+                    <input
+                      type="checkbox"
+                      checked={task.is_completed}
+                      disabled={task.is_completed}
+                      onChange={() => completeTask(task.id)}
+                      className="h-4 w-4 shrink-0 rounded accent-primary cursor-pointer disabled:opacity-40"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className={`text-sm font-semibold ${task.is_completed ? 'line-through text-muted-foreground' : 'text-foreground'}`}>
+                        {task.title}
+                      </p>
+                      {task.description && <p className="mt-0.5 text-xs text-muted-foreground truncate">{task.description}</p>}
+                    </div>
+                    {task.priority && (
+                      <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${priorityColor[task.priority]}`}>
+                        {task.priority}
+                      </span>
+                    )}
+                    {task.due_date && (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        📅 {new Date(task.due_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })}
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
-          </motion.div>
+          </div>
 
-          {/* Right Column - Leaderboard */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-          >
-            <h2 className="text-2xl font-bold mb-6">🏆 Leaderboard</h2>
-            <div className="rounded-2xl glass-strong border border-border p-6 ring-gradient shadow-2xl">
+          {/* ── Right column ── */}
+          <aside className="hidden lg:flex w-72 shrink-0 flex-col gap-4 overflow-y-auto border-l border-white/5 px-4 py-6">
+
+            {/* Streaks card */}
+            <div className="rounded-2xl border border-white/6 bg-white/2 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Streaks</span>
+                <Flame className="h-4 w-4 text-[var(--neon-amber)]" />
+              </div>
+              <div className="flex items-end gap-2">
+                <span className="font-display text-4xl font-extrabold text-foreground">{stats.streak}</span>
+                <span className="mb-1 text-sm text-muted-foreground">days</span>
+              </div>
+              <div className="mt-3 flex items-center gap-1.5">
+                {[...Array(7)].map((_, i) => (
+                  <div key={i} className={`h-2 flex-1 rounded-full ${i < (stats.streak % 7 || 7) ? 'bg-[var(--neon-amber)]' : 'bg-white/8'}`} />
+                ))}
+              </div>
+              <p className="mt-2 text-[10px] text-muted-foreground">Keep going — don't break the chain! 🔥</p>
+            </div>
+
+            {/* Weekly Graph card */}
+            <div className="rounded-2xl border border-white/6 bg-white/2 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Weekly Graph</span>
+                <BarChart2 className="h-4 w-4 text-primary" />
+              </div>
+              <div className="flex items-end gap-1.5 h-20">
+                {WEEK_DATA.map((v, i) => (
+                  <div key={i} className="flex flex-1 flex-col items-center gap-1">
+                    <div
+                      className="w-full rounded-t-md"
+                      style={{
+                        height: `${(v / MAX_TASKS) * 100}%`,
+                        background: i === new Date().getDay() - 1
+                          ? 'linear-gradient(to top, #818cf8, #38bdf8)'
+                          : 'rgba(129,140,248,0.25)',
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="mt-1.5 flex gap-1.5">
+                {WEEK.map(d => (
+                  <div key={d} className="flex-1 text-center text-[9px] text-muted-foreground">{d}</div>
+                ))}
+              </div>
+            </div>
+
+            {/* Leaderboard card */}
+            <div className="rounded-2xl border border-white/6 bg-white/2 p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">LeaderBoard</span>
+                <Crown className="h-4 w-4 text-primary" />
+              </div>
               <div className="space-y-2">
-                {leaderboard.length === 0 ? (
-                  <p className="text-muted-foreground text-center py-8">Loading leaderboard...</p>
-                ) : (
-                  leaderboard.slice(0, 5).map((member, idx) => {
-                    return (
-                      <motion.div
-                        key={member.id}
-                        initial={{ opacity: 0, x: 20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.4 + idx * 0.08 }}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-all ${
-                          idx === 0
-                            ? "bg-primary/10 border-primary/40 glow-amber"
-                            : "bg-surface/30 border-border hover:border-primary/30"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div
-                            className={`flex h-7 w-7 items-center justify-center rounded-lg text-xs font-bold flex-shrink-0 ${
-                              idx === 0
-                                ? "gradient-amber text-white"
-                                : "bg-surface-2 text-foreground"
-                            }`}
-                          >
-                            {idx + 1}
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-semibold text-sm truncate">{member.display_name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              🔥 {member.streak_days} day streak
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-bold text-primary text-sm">{member.score}</p>
-                          <p className="text-xs text-muted-foreground">pts</p>
-                        </div>
-                      </motion.div>
-                    );
-                  })
-                )}
+                {leaderboard.slice(0, 5).map((m, i) => (
+                  <div key={m.id} className={`flex items-center gap-2 rounded-xl px-2 py-2 ${i === 0 ? 'bg-primary/10' : 'hover:bg-white/4'}`}>
+                    <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold ${i === 0 ? 'gradient-brand text-white' : 'bg-white/8 text-muted-foreground'}`}>
+                      {i + 1}
+                    </span>
+                    <span className="flex-1 min-w-0 text-xs font-semibold text-foreground truncate">{m.display_name}</span>
+                    <span className="shrink-0 text-[10px] font-bold text-primary">{m.score?.toLocaleString()}</span>
+                  </div>
+                ))}
               </div>
-
-              <div className="mt-6 pt-4 border-t border-border">
-                <button className="w-full rounded-lg glass px-4 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2">
-                  View Full Leaderboard
-                  <ArrowRight size={14} />
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </main>
-
-      {/* Task Creation Modal */}
-      {showTaskModal && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-background border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">Create Challenge</h3>
-              <button
-                onClick={() => setShowTaskModal(false)}
-                className="p-2 hover:bg-surface rounded-lg transition-colors"
-              >
-                <X size={20} />
+              <button className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-xl border border-white/8 py-2 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors">
+                View Full Leaderboard <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
+          </aside>
+        </div>
+      </div>
 
+      {/* ══════════════════════════════════
+          ADD TASK MODAL
+      ══════════════════════════════════ */}
+      {showModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0e1325] p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="font-display text-xl font-bold">New Challenge</h3>
+              <button onClick={() => setShowModal(false)} className="rounded-lg p-1.5 hover:bg-white/8 text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Challenge Title
-                </label>
-                <input
-                  type="text"
-                  value={taskTitle}
-                  onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="e.g., Complete coding interview"
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary outline-none transition-colors"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Description (optional)
-                </label>
-                <textarea
-                  value={taskDesc}
-                  onChange={(e) => setTaskDesc(e.target.value)}
-                  placeholder="Add details..."
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary outline-none resize-none transition-colors"
-                  rows={3}
-                />
-              </div>
-
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Priority
-                  </label>
-                  <select
-                    value={taskPriority}
-                    onChange={(e) => setTaskPriority(e.target.value as "high" | "medium" | "low")}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground focus:border-primary outline-none transition-colors"
-                  >
-                    <option value="high">High</option>
-                    <option value="medium">Medium</option>
-                    <option value="low">Low</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Category
-                  </label>
-                  <select
-                    value={taskCategory}
-                    onChange={(e) => setTaskCategory(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground focus:border-primary outline-none transition-colors"
-                  >
-                    <option value="coding">Coding</option>
-                    <option value="fitness">Fitness</option>
-                    <option value="learning">Learning</option>
-                    <option value="work">Work</option>
-                    <option value="personal">Personal</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground mb-2">
-                    Deadline
-                  </label>
-                  <input
-                    type="date"
-                    value={taskDeadline}
-                    onChange={(e) => setTaskDeadline(e.target.value)}
-                    className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground focus:border-primary outline-none transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowTaskModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-surface hover:bg-surface-2 text-foreground rounded-lg font-medium transition-colors"
+              <input
+                value={taskTitle} onChange={e => setTaskTitle(e.target.value)}
+                placeholder="Challenge title…"
+                className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50"
+              />
+              <textarea
+                value={taskDesc} onChange={e => setTaskDesc(e.target.value)}
+                placeholder="Description (optional)…"
+                rows={3}
+                className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 resize-none"
+              />
+              <div className="grid grid-cols-2 gap-3">
+                <select
+                  value={taskPriority} onChange={e => setTaskPriority(e.target.value as any)}
+                  className="rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50"
                 >
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+                <input type="date" value={taskDeadline} onChange={e => setTaskDeadline(e.target.value)}
+                  className="rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowModal(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                   Cancel
                 </button>
-                <button
-                  onClick={handleCreateTask}
-                  className="flex-1 px-4 py-2.5 gradient-amber text-white rounded-lg font-medium transition-transform hover:scale-[1.02]"
-                >
+                <button onClick={createTask} className="flex-1 rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity">
                   Create
                 </button>
               </div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-
-      {/* Proof Submission Modal */}
-      {showProofModal && selectedTask && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="bg-background border border-border rounded-2xl p-6 max-w-md w-full shadow-2xl"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold">Submit Proof</h3>
-              <button
-                onClick={() => setShowProofModal(false)}
-                className="p-2 hover:bg-surface rounded-lg transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-
-            <p className="text-sm text-muted-foreground mb-4">
-              Challenge: <span className="font-semibold text-foreground">{selectedTask.title}</span>
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Add Image (optional)
-                </label>
-                <label className="w-full bg-surface border border-dashed border-border rounded-lg px-4 py-6 text-center cursor-pointer hover:border-primary/50 transition-colors group">
-                  <Upload
-                    size={24}
-                    className="mx-auto text-muted-foreground group-hover:text-primary transition-colors mb-2"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    {proofImage ? proofImage.name : "Click to upload"}
-                  </p>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setProofImage(e.target.files?.[0] || null)}
-                    className="hidden"
-                  />
-                </label>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-muted-foreground mb-2">
-                  Proof Notes
-                </label>
-                <textarea
-                  value={proofText}
-                  onChange={(e) => setProofText(e.target.value)}
-                  placeholder="Describe what you've accomplished..."
-                  className="w-full bg-surface border border-border rounded-lg px-4 py-2.5 text-foreground placeholder-muted-foreground focus:border-primary outline-none resize-none transition-colors"
-                  rows={4}
-                />
-              </div>
-
-              <div className="bg-primary/10 border border-primary/20 rounded-lg p-3">
-                <p className="text-sm text-primary font-medium">✓ +15 XP upon submission</p>
-              </div>
-
-              <div className="flex gap-3 pt-4">
-                <button
-                  onClick={() => setShowProofModal(false)}
-                  className="flex-1 px-4 py-2.5 bg-surface hover:bg-surface-2 text-foreground rounded-lg font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSubmitProof}
-                  className="flex-1 px-4 py-2.5 gradient-amber text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-transform hover:scale-[1.02]"
-                >
-                  <Send size={16} /> Submit
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       )}
     </div>
   );
