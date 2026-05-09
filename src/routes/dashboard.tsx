@@ -171,7 +171,6 @@ function Dashboard() {
     }
   };
 
-  
   const email       = user?.email || 'user@email.com';
   const avatar      = user?.user_metadata?.avatar_url;
 
@@ -207,7 +206,6 @@ function Dashboard() {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 space-y-1 px-2 py-4 overflow-hidden">
           {NAV.map(({ icon: Icon, label, id }) => (
             <button
@@ -226,7 +224,6 @@ function Dashboard() {
           ))}
         </nav>
 
-        {/* Logout */}
         <div className="shrink-0 border-t border-white/5 px-2 py-4">
           <button
             onClick={signOut}
@@ -241,7 +238,6 @@ function Dashboard() {
 
       {/* ── MAIN ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
-
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-white/5 bg-[#0a0d1a]/80 px-6 backdrop-blur">
           <div className="relative w-64">
@@ -292,20 +288,12 @@ function Dashboard() {
 
         {/* Content */}
         <div className="flex flex-1 overflow-hidden">
-
-          {/* ── Calendar tab ── */}
           {activeNav === 'calendar' && <CalendarPage />}
-
-          {/* ── Badges tab ── */}
           {activeNav === 'badges' && <BadgesPage />}
-
-          {/* ── Collaborations tab ── */}
           {activeNav === 'collab' && <CollaborationsPage />}
 
-          {/* ── Tasks tab (default) ── */}
           {activeNav === 'tasks' && (
             <>
-              {/* Center */}
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-6">
                 <div className="mb-6 flex items-start justify-between">
                   <div>
@@ -328,7 +316,6 @@ function Dashboard() {
                       ⏰ Set Reminder
                     </button>
                   </div>
-                </div>
                 </div>
 
                 <div className="flex-1 rounded-2xl border border-white/6 bg-white/2 overflow-hidden">
