@@ -7,15 +7,13 @@ import {
   Users, Award, ChevronRight, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import React from 'react';
-// Removed direct import to use React.lazy below
+import ReminderBell from '../components/habitus/ReminderBell';
 import ReminderForm from '../components/habitus/ReminderForm';
 import { toast } from 'sonner';
 import { CalendarPage }       from '../components/dashboard/CalendarPage';
 import { BadgesPage }         from '../components/dashboard/BadgesPage';
 import { CollaborationsPage } from '../components/dashboard/CollaborationsPage';
 import { useInactivityReminder } from '../hooks/useInactivityReminder';
-
-const ReminderBell = React.lazy(() => import('../components/habitus/ReminderBell'));
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: async () => {
@@ -165,6 +163,7 @@ function Dashboard() {
     }
   };
 
+  
   const email       = user?.email || 'user@email.com';
   const avatar      = user?.user_metadata?.avatar_url;
 
@@ -200,6 +199,7 @@ function Dashboard() {
           </button>
         </div>
 
+        {/* Nav */}
         <nav className="flex-1 space-y-1 px-2 py-4 overflow-hidden">
           {NAV.map(({ icon: Icon, label, id }) => (
             <button
@@ -218,6 +218,7 @@ function Dashboard() {
           ))}
         </nav>
 
+        {/* Logout */}
         <div className="shrink-0 border-t border-white/5 px-2 py-4">
           <button
             onClick={signOut}
@@ -232,6 +233,7 @@ function Dashboard() {
 
       {/* ── MAIN ── */}
       <div className="flex flex-1 flex-col overflow-hidden">
+
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center gap-3 border-b border-white/5 bg-[#0a0d1a]/80 px-6 backdrop-blur">
           <div className="relative w-64">
@@ -257,12 +259,8 @@ function Dashboard() {
           </div>
 
           {/* Reminders */}
-          {/* ReminderBell shows pending count and a dropdown */}
           <div className="mr-1">
-            {/* dynamically loaded to avoid large imports in this bundle */}
-            <React.Suspense fallback={<div className="h-9 w-9" />}>
-              <ReminderBell />
-            </React.Suspense>
+            <ReminderBell />
           </div>
 
           <div className="flex items-center gap-2.5">
@@ -282,12 +280,20 @@ function Dashboard() {
 
         {/* Content */}
         <div className="flex flex-1 overflow-hidden">
+
+          {/* ── Calendar tab ── */}
           {activeNav === 'calendar' && <CalendarPage />}
+
+          {/* ── Badges tab ── */}
           {activeNav === 'badges' && <BadgesPage />}
+
+          {/* ── Collaborations tab ── */}
           {activeNav === 'collab' && <CollaborationsPage />}
 
+          {/* ── Tasks tab (default) ── */}
           {activeNav === 'tasks' && (
             <>
+              {/* Center */}
               <div className="flex flex-1 flex-col overflow-y-auto px-6 py-6">
                 <div className="mb-6 flex items-start justify-between">
                   <div>
