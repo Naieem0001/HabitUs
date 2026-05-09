@@ -2,10 +2,13 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
 import {
-  Zap, Search, Bell, LogOut, Plus, X, Send, Upload,
+  Zap, Search, LogOut, Plus, X, Send, Upload,
   Flame, Trophy, CheckCircle, BarChart2, Crown, Calendar,
   Users, Award, ChevronRight
 } from 'lucide-react';
+import React from 'react';
+import ReminderBell from '../components/habitus/ReminderBell';
+import ReminderForm from '../components/habitus/ReminderForm';
 import { toast } from 'sonner';
 
 export const Route = createFileRoute("/dashboard")({
@@ -56,11 +59,12 @@ function Dashboard() {
 
   /* task modal */
   const [showModal, setShowModal] = useState(false);
+  const [showReminderModal, setShowReminderModal] = useState(false);
   const [taskTitle, setTaskTitle] = useState('');
   const [taskDesc,  setTaskDesc]  = useState('');
   const [taskPriority, setTaskPriority] = useState<'high'|'medium'|'low'>('medium');
   const [taskDeadline, setTaskDeadline] = useState('');
-
+  const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
   useEffect(() => {
@@ -87,6 +91,18 @@ function Dashboard() {
       } catch {}
     })();
   }, []);
+
+  // inactivity reminder hook (fires toast after 30m of no new completions)
+  // lazy import to avoid extra bundle cost in other routes
+  React.useEffect(() => {
+    let mounted = true;
+    (async () => {
+      const { useInactivityReminder } = await import('../hooks/useInactivityReminder');
+      if (!mounted) return;
+      useInactivityReminder({ userId: user?.id ?? null, name: displayName, tasksCompleted: stats.tasks_completed });
+    })();
+    return () => { mounted = false; };
+  }, [user, displayName, stats.tasks_completed]);
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = '/login'; };
 
@@ -116,7 +132,7 @@ function Dashboard() {
     } catch {}
   };
 
-  const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
+  
   const email       = user?.email || 'user@email.com';
   const avatar      = user?.user_metadata?.avatar_url;
 
@@ -204,11 +220,14 @@ function Dashboard() {
             <span className="text-xs font-bold text-[var(--neon-amber)]">Level {stats.level}</span>
           </div>
 
-          {/* Bell */}
-          <button className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/8 bg-white/4 text-muted-foreground hover:text-foreground transition-colors">
-            <Bell className="h-4 w-4" />
-            <span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-primary" />
-          </button>
+          {/* Reminders */}
+          {/* ReminderBell shows pending count and a dropdown */}
+          <div className="mr-1">
+            {/* dynamically loaded to avoid large imports in this bundle */}
+            <React.Suspense fallback={<div className="h-9 w-9" />}>
+              <ReminderBell />
+            </React.Suspense>
+          </div>
 
           {/* User */}
           <div className="flex items-center gap-2.5">
@@ -240,12 +259,20 @@ function Dashboard() {
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">Your squad is ranking high. Keep the streak alive! 🔥</p>
               </div>
-              <button
-                onClick={() => setShowModal(true)}
-                className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity"
-              >
-                <Plus className="h-4 w-4" /> Add Task
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowModal(true)}
+                  className="flex items-center gap-2 rounded-2xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity"
+                >
+                  <Plus className="h-4 w-4" /> Add Task
+                </button>
+                <button
+                  onClick={() => setShowReminderModal(true)}
+                  className="flex items-center gap-2 rounded-2xl border border-white/8 px-4 py-2 text-sm font-semibold text-muted-foreground hover:text-foreground"
+                >
+                  ⏰ Set Reminder
+                </button>
+              </div>
             </div>
 
             {/* Tasks panel */}
@@ -432,6 +459,18 @@ function Dashboard() {
               </div>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Reminders modal */}
+      {showReminderModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <ReminderForm
+            userId={user?.id ?? null}
+            tasks={tasks.map(t => ({ id: t.id, title: t.title }))}
+            onSaved={() => {}}
+            onClose={() => setShowReminderModal(false)}
+          />
         </div>
       )}
     </div>
