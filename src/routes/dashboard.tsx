@@ -2,15 +2,14 @@ import { createFileRoute, redirect } from '@tanstack/react-router';
 import { supabase } from '../lib/supabaseClient';
 import { useEffect, useState } from 'react';
 import {
-  Zap, Search, Bell, LogOut, Plus, X,
+  Zap, Search, Bell, LogOut, Plus, X, Send, Upload,
   Flame, Trophy, CheckCircle, BarChart2, Crown, Calendar,
-  Users, Award, ChevronRight, PanelLeftClose, PanelLeftOpen
+  Users, Award, ChevronRight, PanelLeftClose, PanelLeftOpen, Share2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { CalendarPage }       from '../components/dashboard/CalendarPage';
 import { BadgesPage }         from '../components/dashboard/BadgesPage';
 import { CollaborationsPage } from '../components/dashboard/CollaborationsPage';
-
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -60,6 +59,8 @@ function Dashboard() {
   const [activeNav,   setActiveNav] = useState('tasks');
   const [tab,         setTab]     = useState<'active'|'completed'>('active');
   const [search,      setSearch]  = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [isSearchingUsers, setIsSearchingUsers] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const [showModal,    setShowModal]    = useState(false);
@@ -76,6 +77,61 @@ function Dashboard() {
   const [proofImage, setProofImage] = useState<File | null>(null);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
+  const groupCode = 'HABITUS';
+
+  useEffect(() => {
+    if (activeNav !== 'collab') {
+      setUserSearchResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const query = search.trim();
+    if (!query) {
+      setUserSearchResults([]);
+      return;
+    }
+
+    const fetchUsers = async () => {
+      setIsSearchingUsers(true);
+      try {
+        const res = await fetch(`${backendUrl}/api/users/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+        });
+        if (!res.ok) {
+          setUserSearchResults([]);
+          return;
+        }
+        const data = await res.json();
+        setUserSearchResults(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if ((error as any)?.name !== 'AbortError') {
+          console.error('User search failed', error);
+          setUserSearchResults([]);
+        }
+      } finally {
+        setIsSearchingUsers(false);
+      }
+    };
+
+    fetchUsers();
+    return () => controller.abort();
+  }, [search, activeNav, backendUrl]);
+
+  const copyGroupCode = async () => {
+    try {
+      await navigator.clipboard.writeText(groupCode);
+      toast.success('Group code copied to clipboard!');
+    } catch {
+      toast.error('Could not copy the code');
+    }
+  };
+
+  const inviteByEmail = () => {
+    const subject = encodeURIComponent('Join my HabitUs squad');
+    const body = encodeURIComponent(`Join my HabitUs group using this code: ${groupCode}\n\nOpen the app at http://localhost:8082 to join and start tracking habits together.`);
+    window.location.href = `mailto:?subject=${subject}&body=${body}`;
+  };
 
   useEffect(() => {
     (async () => {
@@ -157,10 +213,14 @@ function Dashboard() {
   const email       = user?.email || 'user@email.com';
   const avatar      = user?.user_metadata?.avatar_url;
 
-  const filtered = tasks.filter(t =>
-    (tab === 'active' ? !t.is_completed : t.is_completed) &&
-    t.title.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = tasks.filter(t => {
+    const query = search.toLowerCase();
+    const matchesStatus = tab === 'active' ? !t.is_completed : t.is_completed;
+    const matchesTitle = t.title.toLowerCase().includes(query);
+    const matchesDescription = t.description?.toLowerCase().includes(query);
+    const matchesCategory = t.category?.toLowerCase().includes(query);
+    return matchesStatus && (matchesTitle || matchesDescription || matchesCategory);
+  });
 
   return (
     <div className="flex h-screen bg-[#080b14] text-foreground overflow-hidden">
@@ -231,8 +291,11 @@ function Dashboard() {
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search tasks…"
-              className="w-full rounded-xl border border-white/8 bg-white/4 py-2 pl-9 pr-4 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/40"
+              placeholder={activeNav === 'collab'
+                ? 'Search users by name or email…'
+                : 'Search tasks, categories or descriptions…'
+              }
+              className="w-full rounded-xl border border-white/8 bg-[#131a2e] py-2 pl-9 pr-4 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/40"
             />
           </div>
 
@@ -278,7 +341,13 @@ function Dashboard() {
           {activeNav === 'badges' && <BadgesPage />}
 
           {/* ── Collaborations tab ── */}
-          {activeNav === 'collab' && <CollaborationsPage />}
+          {activeNav === 'collab' && (
+            <CollaborationsPage
+              searchTerm={search}
+              searchResults={userSearchResults}
+              isSearching={isSearchingUsers}
+            />
+          )}
 
           {/* ── Tasks tab (default) ── */}
           {activeNav === 'tasks' && (
@@ -346,16 +415,23 @@ function Dashboard() {
                             <p className="mt-0.5 text-xs text-muted-foreground truncate">{task.description}</p>
                           )}
                         </div>
-                        {task.priority && (
-                          <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${PRIORITY_COLOR[task.priority]}`}>
-                            {task.priority}
-                          </span>
-                        )}
-                        {task.due_date && (
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
-                            📅 {new Date(task.due_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })}
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {task.priority && (
+                            <span className={`shrink-0 rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase ${PRIORITY_COLOR[task.priority]}`}>
+                              {task.priority}
+                            </span>
+                          )}
+                          {task.category && (
+                            <span className="shrink-0 rounded-full border border-white/10 bg-[#131a2e] px-2.5 py-0.5 text-[10px] font-semibold uppercase text-muted-foreground">
+                              {task.category}
+                            </span>
+                          )}
+                          {task.due_date && (
+                            <span className="shrink-0 text-[10px] text-muted-foreground">
+                              📅 {new Date(task.due_date).toLocaleDateString('en-US', { month:'short', day:'numeric' })}
+                            </span>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -364,6 +440,28 @@ function Dashboard() {
 
               {/* Right sidebar */}
               <aside className="hidden lg:flex w-72 shrink-0 flex-col gap-4 overflow-y-auto border-l border-white/5 px-4 py-6">
+
+                {/* Invite squad */}
+                <div className="rounded-2xl border border-white/6 bg-white/2 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Invite Squad</span>
+                    <Share2 className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-sm font-semibold text-foreground">Group code</p>
+                  <div className="mt-2 flex items-center justify-between rounded-2xl border border-white/10 bg-[#131a2e] px-3 py-3">
+                    <span className="text-sm font-semibold text-muted-foreground">{groupCode}</span>
+                    <button
+                      onClick={copyGroupCode}
+                      className="rounded-xl bg-white/5 px-3 py-1.5 text-[11px] font-semibold text-foreground transition hover:bg-white/10"
+                    >Copy</button>
+                  </div>
+                  <button
+                    onClick={inviteByEmail}
+                    className="mt-4 w-full rounded-2xl bg-primary/90 px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary"
+                  >
+                    Invite by Email
+                  </button>
+                </div>
 
                 {/* Streaks */}
                 <div className="rounded-2xl border border-white/6 bg-white/2 p-4">
@@ -452,20 +550,20 @@ function Dashboard() {
               <input
                 value={taskTitle} onChange={e => setTaskTitle(e.target.value)}
                 placeholder="Challenge title…"
-                className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50"
+                className="w-full rounded-xl border border-white/10 bg-[#131a2e] px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50"
               />
               <textarea
                 value={taskDesc} onChange={e => setTaskDesc(e.target.value)}
                 placeholder="Description (optional)…"
                 rows={3}
-                className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 resize-none"
+                className="w-full rounded-xl border border-white/10 bg-[#131a2e] px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 resize-none"
               />
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">Priority</label>
                   <select
                     value={taskPriority} onChange={e => setTaskPriority(e.target.value as any)}
-                    className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
+                    className="w-full rounded-xl border border-white/10 bg-[#131a2e] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
                   >
                     <option value="high">High</option>
                     <option value="medium">Medium</option>
@@ -476,7 +574,7 @@ function Dashboard() {
                   <label className="block text-xs font-medium text-muted-foreground mb-1.5">Category</label>
                   <select
                     value={taskCategory} onChange={e => setTaskCategory(e.target.value)}
-                    className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
+                    className="w-full rounded-xl border border-white/10 bg-[#131a2e] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
                   >
                     <option value="coding">Coding</option>
                     <option value="fitness">Fitness</option>
@@ -489,7 +587,7 @@ function Dashboard() {
               <div>
                 <label className="block text-xs font-medium text-muted-foreground mb-1.5">Deadline (optional)</label>
                 <input type="date" value={taskDeadline} onChange={e => setTaskDeadline(e.target.value)}
-                  className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 cursor-pointer"
+                  className="w-full rounded-xl border border-white/10 bg-[#131a2e] px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 cursor-pointer"
                 />
               </div>
               <div className="flex gap-3 pt-2">
