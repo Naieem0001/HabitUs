@@ -24,7 +24,7 @@ export const Route = createFileRoute('/dashboard')({
 interface Task {
   id: string; user_id: string; title: string; description?: string;
   priority: 'high' | 'medium' | 'low'; is_completed: boolean;
-  due_date?: string; created_at: string;
+  category?: string; due_date?: string; created_at: string;
 }
 
 const WEEK      = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
@@ -66,7 +66,14 @@ function Dashboard() {
   const [taskTitle,    setTaskTitle]    = useState('');
   const [taskDesc,     setTaskDesc]     = useState('');
   const [taskPriority, setTaskPriority] = useState<'high'|'medium'|'low'>('medium');
+  const [taskCategory, setTaskCategory] = useState('coding');
   const [taskDeadline, setTaskDeadline] = useState('');
+
+  /* proof modal */
+  const [showProofModal, setShowProofModal] = useState(false);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [proofText, setProofText] = useState('');
+  const [proofImage, setProofImage] = useState<File | null>(null);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3000';
 
@@ -105,22 +112,45 @@ function Dashboard() {
       const r = await fetch(`${backendUrl}/api/tasks`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
-        body: JSON.stringify({ title: taskTitle, description: taskDesc, priority: taskPriority, due_date: taskDeadline }),
+        body: JSON.stringify({ title: taskTitle, description: taskDesc, priority: taskPriority, category: taskCategory, due_date: taskDeadline }),
       });
       const t = await r.json();
       if (t && !t.error) { setTasks([t, ...tasks]); toast.success('Challenge added! 🚀'); }
     } catch { toast.error('Failed'); }
-    setShowModal(false); setTaskTitle(''); setTaskDesc(''); setTaskDeadline('');
+    setShowModal(false); setTaskTitle(''); setTaskDesc(''); setTaskCategory('coding'); setTaskPriority('medium'); setTaskDeadline('');
   };
 
   const completeTask = async (id: string) => {
+    const task = tasks.find(t => t.id === id);
+    if (task) {
+      setSelectedTask(task);
+      setShowProofModal(true);
+    }
+  };
+
+  const submitProof = async () => {
+    if (!selectedTask || !proofText.trim()) return;
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.access_token) return;
-      await fetch(`${backendUrl}/api/tasks/${id}/complete`, { method: 'PATCH', headers: { Authorization: `Bearer ${session.access_token}` } });
-      setTasks(tasks.map(t => t.id === id ? { ...t, is_completed: true } : t));
+
+      // Submit proof and complete task
+      await fetch(`${backendUrl}/api/tasks/${selectedTask.id}/complete`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      });
+
+      setTasks(tasks.map(t => t.id === selectedTask.id ? { ...t, is_completed: true } : t));
       toast.success('Quest Complete! +10 XP 🎉');
-    } catch {}
+
+      setShowProofModal(false);
+      setSelectedTask(null);
+      setProofText('');
+      setProofImage(null);
+    } catch {
+      toast.error('Failed to submit proof');
+    }
   };
 
   const displayName = user?.user_metadata?.full_name?.split(' ')[0] || 'User';
@@ -431,16 +461,35 @@ function Dashboard() {
                 className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 resize-none"
               />
               <div className="grid grid-cols-2 gap-3">
-                <select
-                  value={taskPriority} onChange={e => setTaskPriority(e.target.value as any)}
-                  className="rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50"
-                >
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
-                </select>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Priority</label>
+                  <select
+                    value={taskPriority} onChange={e => setTaskPriority(e.target.value as any)}
+                    className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
+                  >
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-muted-foreground mb-1.5">Category</label>
+                  <select
+                    value={taskCategory} onChange={e => setTaskCategory(e.target.value)}
+                    className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 appearance-none cursor-pointer"
+                  >
+                    <option value="coding">Coding</option>
+                    <option value="fitness">Fitness</option>
+                    <option value="learning">Learning</option>
+                    <option value="work">Work</option>
+                    <option value="personal">Personal</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-muted-foreground mb-1.5">Deadline (optional)</label>
                 <input type="date" value={taskDeadline} onChange={e => setTaskDeadline(e.target.value)}
-                  className="rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50"
+                  className="w-full rounded-xl border border-white/10 bg-white/4 px-4 py-2.5 text-sm text-foreground outline-none focus:border-primary/50 cursor-pointer"
                 />
               </div>
               <div className="flex gap-3 pt-2">
@@ -449,6 +498,72 @@ function Dashboard() {
                 </button>
                 <button onClick={createTask} className="flex-1 rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity">
                   Create
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ══════════════════════════════════
+          PROOF SUBMISSION MODAL
+      ══════════════════════════════════ */}
+      {showProofModal && selectedTask && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="w-full max-w-md rounded-2xl border border-white/10 bg-[#0e1325] p-6 shadow-2xl">
+            <div className="mb-5 flex items-center justify-between">
+              <h3 className="font-display text-xl font-bold">Submit Proof</h3>
+              <button onClick={() => setShowProofModal(false)} className="rounded-lg p-1.5 hover:bg-white/8 text-muted-foreground hover:text-foreground transition-colors">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            <p className="mb-4 text-sm text-muted-foreground">
+              Challenge: <span className="font-semibold text-foreground">{selectedTask.title}</span>
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Add Image (optional)
+                </label>
+                <label className="w-full bg-white/4 border border-white/10 rounded-xl px-4 py-6 text-center cursor-pointer hover:border-primary/50 transition-colors group">
+                  <Upload className="mx-auto text-muted-foreground group-hover:text-primary transition-colors mb-2 h-5 w-5" />
+                  <p className="text-sm text-muted-foreground">
+                    {proofImage ? proofImage.name : "Click to upload"}
+                  </p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProofImage(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted-foreground mb-2">
+                  Proof Notes
+                </label>
+                <textarea
+                  value={proofText}
+                  onChange={(e) => setProofText(e.target.value)}
+                  placeholder="Describe what you've accomplished..."
+                  className="w-full bg-white/4 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-foreground placeholder-muted-foreground outline-none focus:border-primary/50 resize-none"
+                  rows={4}
+                />
+              </div>
+
+              <div className="bg-primary/10 border border-primary/20 rounded-xl p-3">
+                <p className="text-sm text-primary font-medium">✓ +10 XP upon submission</p>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button onClick={() => setShowProofModal(false)} className="flex-1 rounded-xl border border-white/10 py-2.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                  Cancel
+                </button>
+                <button onClick={submitProof} className="flex-1 rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-brand hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                  <Send className="h-4 w-4" /> Submit
                 </button>
               </div>
             </div>
