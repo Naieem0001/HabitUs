@@ -7,12 +7,15 @@ import {
   Users, Award, ChevronRight, PanelLeftClose, PanelLeftOpen
 } from 'lucide-react';
 import React from 'react';
-import ReminderBell from '../components/habitus/ReminderBell';
+// Removed direct import to use React.lazy below
 import ReminderForm from '../components/habitus/ReminderForm';
 import { toast } from 'sonner';
 import { CalendarPage }       from '../components/dashboard/CalendarPage';
 import { BadgesPage }         from '../components/dashboard/BadgesPage';
 import { CollaborationsPage } from '../components/dashboard/CollaborationsPage';
+import { useInactivityReminder } from '../hooks/useInactivityReminder';
+
+const ReminderBell = React.lazy(() => import('../components/habitus/ReminderBell'));
 
 export const Route = createFileRoute('/dashboard')({
   beforeLoad: async () => {
@@ -109,16 +112,7 @@ function Dashboard() {
   }, []);
 
   // inactivity reminder hook (fires toast after 30m of no new completions)
-  // lazy import to avoid extra bundle cost in other routes
-  React.useEffect(() => {
-    let mounted = true;
-    (async () => {
-      const { useInactivityReminder } = await import('../hooks/useInactivityReminder');
-      if (!mounted) return;
-      useInactivityReminder({ userId: user?.id ?? null, name: displayName, tasksCompleted: stats.tasks_completed });
-    })();
-    return () => { mounted = false; };
-  }, [user, displayName, stats.tasks_completed]);
+  useInactivityReminder({ userId: user?.id ?? null, name: displayName, tasksCompleted: stats.tasks_completed });
 
   const signOut = async () => { await supabase.auth.signOut(); window.location.href = '/login'; };
 
